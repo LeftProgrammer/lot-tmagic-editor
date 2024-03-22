@@ -1,0 +1,27 @@
+.magic-form-dynamic-tab {
+  .el-tabs__header.is-top {
+    padding-right: 8px;
+    .el-tabs__new-tab {
+      margin-right: auto;
+      min-width: 50px;
+      outline: none;
+      border-color: #409eff;
+      color: #409eff;
+      width: 10px;
+      &::before {
+        content: "添加";
+      }
+      .el-icon-plus {
+        display: none;
+      }
+    }
+  }
+}
+
+.magic-form-tab {
+  margin-bottom: 10px;
+}
+
+.diff-count-badge {
+  top: -10px;
+}

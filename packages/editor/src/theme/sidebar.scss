@@ -1,0 +1,86 @@
+.m-editor-sidebar {
+  display: flex;
+  height: 100%;
+
+  .m-editor-sidebar-header {
+    background: $--sidebar-heder-background-color;
+    height: 100%;
+    width: 40px;
+
+    .m-editor-sidebar-header-item {
+      line-height: 15px;
+      height: auto;
+      padding: 8px;
+      color: rgb(255, 255, 255);
+      box-sizing: border-box;
+      cursor: pointer;
+
+      &.is-active {
+        background: $--sidebar-content-background-color;
+
+        i {
+          color: #353140;
+        }
+
+        .magic-editor-tab-panel-title {
+          color: #353140;
+        }
+      }
+    }
+
+    i {
+      font-size: 25px;
+      color: rgba(255, 255, 255, 0.6);
+
+      &:hover {
+        color: rgb(255, 255, 255);
+      }
+    }
+
+    .magic-editor-tab-panel-title {
+      font-size: 12px;
+      white-space: normal;
+      user-select: none;
+    }
+  }
+
+  .m-editor-sidebar-content {
+    height: 100%;
+    width: calc(100% - 40px);
+    overflow: auto;
+  }
+
+  .tmagic-design-scrollbar {
+    height: 100%;
+  }
+
+  .fold-icon {
+    position: absolute;
+    bottom: 8px;
+    left: 0px;
+    width: 45px;
+    padding-left: 8px;
+    color: #fff;
+    font-size: 32px;
+    opacity: 0.8;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+.m-editor-slide-list-box {
+  display: flex;
+  min-width: 240px;
+  min-height: 500px;
+  > div {
+    &:first-child {
+      min-width: 240px;
+    }
+  }
+  .m-form-box {
+    border-left: 1px solid #e0e0e0;
+  }
+}

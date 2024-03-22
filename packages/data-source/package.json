@@ -1,0 +1,49 @@
+{
+  "version": "1.3.16",
+  "name": "@tmagic/data-source",
+  "type": "module",
+  "sideEffects": [
+    "dist/*"
+  ],
+  "main": "dist/tmagic-data-source.umd.cjs",
+  "module": "dist/tmagic-data-source.js",
+  "types": "types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./dist/tmagic-data-source.js",
+      "require": "./dist/tmagic-data-source.umd.cjs"
+    },
+    "./*": "./*"
+  },
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "npm run build:type && vite build",
+    "build:type": "npm run clear:type && tsc --declaration --emitDeclarationOnly --project tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "clear:type": "rimraf ./types"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tencent/tmagic-editor.git"
+  },
+  "keywords": [
+    "data-source"
+  ],
+  "dependencies": {
+    "@tmagic/utils": "1.3.16",
+    "@tmagic/schema": "1.3.16",
+    "events": "^3.3.0",
+    "lodash-es": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/events": "^3.0.0",
+    "@types/lodash-es": "^4.17.4",
+    "@types/node": "^18.19.0",
+    "tsc-alias": "^1.8.5",
+    "typescript": "^4.7.4",
+    "vite": "^5.0.7"
+  }
+}

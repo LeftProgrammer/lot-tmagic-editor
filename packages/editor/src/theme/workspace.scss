@@ -1,0 +1,9 @@
+.m-editor-workspace {
+  height: 100%;
+  width: 100%;
+  user-select: none;
+
+  &:focus-visible {
+    outline: 0;
+  }
+}

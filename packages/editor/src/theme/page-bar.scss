@@ -1,0 +1,89 @@
+.m-editor-page-bar-tabs {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+
+  .tmagic-design-button.m-editor-page-bar-switch-type-button {
+    margin-left: 7px;
+    position: relative;
+    top: 1px;
+    border-radius: 3px 3px 0 0;
+    border: 1px solid $--border-color;
+    border-bottom: 1px solid transparent;
+
+    &.active {
+      background-color: #f3f3f3;
+    }
+  }
+}
+
+.m-editor-page-bar {
+  display: flex;
+  width: 100%;
+  height: $--page-bar-height;
+  line-height: $--page-bar-height;
+  color: $--font-color;
+  background-color: #f3f3f3;
+  border-top: 1px solid $--border-color;
+  z-index: 2;
+  overflow: hidden;
+
+  &-items {
+    display: flex;
+    transition: transform 0.3s;
+  }
+
+  &-item {
+    padding: 0 10px;
+    cursor: pointer;
+    border-right: 1px solid $--border-color;
+    display: flex;
+    justify-items: center;
+    align-items: center;
+    background-color: #f3f3f3;
+    white-space: nowrap;
+
+    &.active {
+      background-color: #fff;
+      cursor: text;
+
+      .m-editor-page-bar-menu-icon {
+        cursor: pointer;
+      }
+    }
+
+    &-icon {
+      position: relative;
+      z-index: 1;
+    }
+
+    &-title {
+      max-width: 150px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+  }
+}
+
+.page-bar-popover {
+  &.el-popper.el-popover {
+    padding: 10px 0;
+  }
+
+  .menu-item {
+    cursor: pointer;
+    transition: all 0.2s ease 0s;
+    padding: 5px 14px;
+
+    .el-button--text,
+    i {
+      color: $--font-color;
+    }
+
+    &:hover {
+      background-color: $--hover-color;
+    }
+  }
+}
