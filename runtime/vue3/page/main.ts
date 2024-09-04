@@ -22,6 +22,8 @@ import Core from '@tmagic/core';
 import { DataSourceManager, DeepObservedData, registerDataSourceOnDemand } from '@tmagic/data-source';
 import { getUrlParam } from '@tmagic/utils';
 
+import './page-config.ts';
+
 import components from '../.tmagic/async-comp-entry';
 import asyncDataSources from '../.tmagic/async-datasource-entry';
 import plugins from '../.tmagic/plugin-entry';

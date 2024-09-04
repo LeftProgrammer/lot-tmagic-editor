@@ -1,4 +1,5 @@
 import path from 'path';
+
 import { defineConfig } from 'vite';
 import legacy from '@vitejs/plugin-legacy';
 import vue from '@vitejs/plugin-vue';
@@ -7,7 +8,7 @@ import vueJsx from '@vitejs/plugin-vue-jsx';
 import externalGlobals from 'rollup-plugin-external-globals';
 
 export default defineConfig(({ mode }) => {
-  const isProduction = mode.includes('production');
+  console.error('build.vite.config-mode===>', mode);
 
   if (['value', 'config', 'event', 'ds:value', 'ds:config', 'ds:event'].includes(mode)) {
     const capitalToken = mode
@@ -50,7 +51,8 @@ export default defineConfig(({ mode }) => {
 
       publicDir: '../public',
 
-      base: isProduction ? './runtime/vue3/' + mode : '/tmagic-editor/playground/runtime/vue3/' + mode,
+      // base: `/tmagic-editor/playground/runtime/vue3/${mode}`,
+      base: './',
 
       optimizeDeps: {
         exclude: ['vue-demi'],
