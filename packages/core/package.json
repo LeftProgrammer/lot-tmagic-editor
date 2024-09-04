@@ -1,10 +1,7 @@
 {
-  "version": "1.3.16",
+  "version": "1.4.17",
   "name": "@tmagic/core",
   "type": "module",
-  "sideEffects": [
-    "dist/*"
-  ],
   "main": "dist/tmagic-core.umd.cjs",
   "module": "dist/tmagic-core.js",
   "types": "types/index.d.ts",
@@ -20,10 +17,16 @@
     },
     "./*": "./*"
   },
+  "files": [
+    "dist",
+    "types",
+    "src"
+  ],
   "license": "Apache-2.0",
   "scripts": {
     "build": "npm run build:type && vite build",
     "build:type": "npm run clear:type && tsc --declaration --emitDeclarationOnly --project tsconfig.build.json",
+    "check:type": "tsc --noEmit --project tsconfig.build.json",
     "clear:type": "rimraf ./types"
   },
   "engines": {
@@ -37,9 +40,6 @@
     "vue"
   ],
   "dependencies": {
-    "@tmagic/data-source": "1.3.16",
-    "@tmagic/schema": "1.3.16",
-    "@tmagic/utils": "1.3.16",
     "events": "^3.3.0",
     "lodash-es": "^4.17.21"
   },
@@ -48,7 +48,17 @@
     "@types/lodash-es": "^4.17.4",
     "@types/node": "^18.19.0",
     "rimraf": "^3.0.2",
-    "typescript": "^5.0.4",
-    "vite": "^5.0.7"
+    "vite": "^5.3.5"
+  },
+  "peerDependencies": {
+    "@tmagic/data-source": "workspace:*",
+    "@tmagic/schema": "workspace:*",
+    "@tmagic/utils": "workspace:*",
+    "typescript": "*"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   }
 }

@@ -18,7 +18,7 @@
 import { union } from 'lodash-es';
 
 import type { AppCore } from '@tmagic/schema';
-import { getDepNodeIds, getNodes } from '@tmagic/utils';
+import { getDepNodeIds, getNodes, isPage } from '@tmagic/utils';
 
 import DataSourceManager from './DataSourceManager';
 import type { ChangeEvent, DataSourceManagerData } from './types';
@@ -59,14 +59,27 @@ export const createDataSourceManager = (app: AppCore, useMock?: boolean, initial
 
       const nodeIds = union([...Object.keys(condDep), ...Object.keys(dep)]);
 
+      const pages = app.page?.data && app.platform !== 'editor' ? [app.page.data] : dsl.items;
+
       dataSourceManager.emit(
         'update-data',
-        getNodes(nodeIds, dsl.items).map((node) => {
+        getNodes(nodeIds, pages).map((node) => {
           if (app.platform !== 'editor') {
             node.condResult = dataSourceManager.compliedConds(node);
           }
 
-          return dataSourceManager.compiledNode(node);
+          const newNode = dataSourceManager.compiledNode(node);
+
+          if (typeof app.page?.setData === 'function') {
+            if (isPage(newNode)) {
+              app.page.setData(newNode);
+            } else {
+              const n = app.page.getNode(node.id);
+              n?.setData(newNode);
+            }
+          }
+
+          return newNode;
         }),
         sourceId,
         changeEvent,

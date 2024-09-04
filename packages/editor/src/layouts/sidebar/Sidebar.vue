@@ -5,10 +5,11 @@
         class="m-editor-sidebar-header-item"
         v-for="(config, index) in sideBarItems"
         v-show="!floatBoxStates[config.$key]?.status"
-        draggable="true"
+        :draggable="config.draggable ?? true"
         :key="config.$key ?? index"
         :class="{ 'is-active': activeTabName === config.text }"
-        @click="activeTabName = config.text || `${index}`"
+        :style="config.tabStyle || {}"
+        @click="headerItemClickHandler(config, index)"
         @dragstart="dragstartHandler"
         @dragend="dragendHandler(config.$key, $event)"
       >
@@ -20,14 +21,26 @@
       class="m-editor-sidebar-content"
       v-for="(config, index) in sideBarItems"
       :key="config.$key ?? index"
-      v-show="activeTabName === config.text"
+      v-show="[config.text, config.$key, `${index}`].includes(activeTabName)"
     >
       <component
-        v-if="config && !floatBoxStates[config.$key]?.status"
+        v-if="config?.component && !floatBoxStates[config.$key]?.status"
         :is="config.component"
         v-bind="config.props || {}"
         v-on="config?.listeners || {}"
       >
+        <template
+          #component-list="{ componentGroupList }"
+          v-if="config.$key === 'component-list' || config.slots?.componentList"
+        >
+          <slot
+            v-if="config.$key === 'component-list'"
+            name="component-list"
+            :component-group-list="componentGroupList"
+          ></slot>
+          <component v-else-if="config.slots?.componentList" :is="config.slots.componentList" />
+        </template>
+
         <template
           #component-list-panel-header
           v-if="config.$key === 'component-list' || config.slots?.componentListPanelHeader"
@@ -111,6 +124,8 @@
         :key="config.$key ?? index"
         v-if="floatBoxStates[config.$key]?.status"
         v-model:visible="floatBoxStates[config.$key].status"
+        v-model:height="columnLeftHeight"
+        :width="columnLeftWidth"
         :title="config.text"
         :position="{
           left: floatBoxStates[config.$key].left,
@@ -121,8 +136,8 @@
           <div class="m-editor-slide-list-box">
             <component
               v-if="config && floatBoxStates[config.$key].status"
-              :is="config.boxComponentConfig?.component || config.component"
-              v-bind="config.boxComponentConfig?.props || config.props || {}"
+              :is="config.component"
+              v-bind="config.props || {}"
               v-on="config?.listeners || {}"
             />
           </div>
@@ -138,15 +153,18 @@ import { Coin, EditPen, Goods, List } from '@element-plus/icons-vue';
 
 import FloatingBox from '@editor/components/FloatingBox.vue';
 import MIcon from '@editor/components/Icon.vue';
+import { useEditorContentHeight } from '@editor/hooks/use-editor-content-height';
 import { useFloatBox } from '@editor/hooks/use-float-box';
-import type {
-  MenuButton,
-  MenuComponent,
-  Services,
-  SideBarData,
-  SidebarSlots,
-  SideComponent,
-  SideItem,
+import {
+  ColumnLayout,
+  type MenuButton,
+  type MenuComponent,
+  type Services,
+  type SideBarData,
+  type SidebarSlots,
+  type SideComponent,
+  type SideItem,
+  SideItemKey,
 } from '@editor/type';
 
 import CodeBlockListPanel from './code-block/CodeBlockListPanel.vue';
@@ -167,18 +185,25 @@ const props = withDefaults(
     customContentMenu?: (menus: (MenuButton | MenuComponent)[], type: string) => (MenuButton | MenuComponent)[];
   }>(),
   {
-    data: () => ({ type: 'tabs', status: '组件', items: ['component-list', 'layer', 'code-block', 'data-source'] }),
+    data: () => ({
+      type: 'tabs',
+      status: '组件',
+      items: [SideItemKey.COMPONENT_LIST, SideItemKey.LAYER, SideItemKey.CODE_BLOCK, SideItemKey.DATA_SOURCE],
+    }),
   },
 );
 
 const services = inject<Services>('services');
 
+const columnLeftWidth = computed(() => services?.uiService.get('columnWidth')[ColumnLayout.LEFT] || 0);
+const { height: columnLeftHeight } = useEditorContentHeight();
+
 const activeTabName = ref(props.data?.status);
 
 const getItemConfig = (data: SideItem): SideComponent => {
   const map: Record<string, SideComponent> = {
-    'component-list': {
-      $key: 'component-list',
+    [SideItemKey.COMPONENT_LIST]: {
+      $key: SideItemKey.COMPONENT_LIST,
       type: 'component',
       icon: Goods,
       text: '组件',
@@ -197,21 +222,16 @@ const getItemConfig = (data: SideItem): SideComponent => {
       component: LayerPanel,
       slots: {},
     },
-    'code-block': {
+    [SideItemKey.CODE_BLOCK]: {
       $key: 'code-block',
       type: 'component',
       icon: EditPen,
       text: '代码编辑',
       component: CodeBlockListPanel,
       slots: {},
-      boxComponentConfig: {
-        props: {
-          slideType: 'box',
-        },
-      },
     },
-    'data-source': {
-      $key: 'data-source',
+    [SideItemKey.DATA_SOURCE]: {
+      $key: SideItemKey.DATA_SOURCE,
       type: 'component',
       icon: Coin,
       text: '数据源',
@@ -224,6 +244,16 @@ const getItemConfig = (data: SideItem): SideComponent => {
 };
 
 const sideBarItems = computed(() => props.data.items.map((item) => getItemConfig(item)));
+
+watch(
+  sideBarItems,
+  (items) => {
+    services?.uiService.set('sideBarItems', items);
+  },
+  {
+    immediate: true,
+  },
+);
 
 watch(
   () => props.data.status,
@@ -253,6 +283,15 @@ watch(
     activeTabName.value = nextSlideBarItem?.text;
   },
 );
+
+const headerItemClickHandler = async (config: SideComponent, index: number) => {
+  if (typeof config.beforeClick === 'function') {
+    if ((await config.beforeClick(config)) === false) {
+      return;
+    }
+  }
+  activeTabName.value = config.text || config.$key || `${index}`;
+};
 
 defineExpose({
   activeTabName,

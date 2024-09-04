@@ -3,13 +3,12 @@
 </template>
 
 <script lang="ts" setup>
-import { MComponent } from '@tmagic/schema';
-
-import useApp from '../../useApp';
+import type { MComponent } from '@tmagic/schema';
+import { useApp } from '@tmagic/vue-runtime-help';
 
 const props = withDefaults(
   defineProps<{
-    config: MComponent;
+    config: MComponent & { type: 'text'; text: string };
     model?: any;
   }>(),
   {

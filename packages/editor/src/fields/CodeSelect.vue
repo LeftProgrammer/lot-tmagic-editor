@@ -1,7 +1,16 @@
 <template>
   <div class="m-fields-code-select" :class="config.className">
     <TMagicCard>
-      <m-form-container :config="codeConfig" :model="model[name]" @change="changeHandler"> </m-form-container>
+      <MContainer
+        :config="codeConfig"
+        :size="size"
+        :prop="prop"
+        :disabled="disabled"
+        :lastValues="lastValues"
+        :model="model[name]"
+        @change="changeHandler"
+      >
+      </MContainer>
     </TMagicCard>
   </div>
 </template>
@@ -12,13 +21,13 @@ import { isEmpty } from 'lodash-es';
 
 import { TMagicCard } from '@tmagic/design';
 import type { FieldProps, FormItem } from '@tmagic/form';
-import { FormState } from '@tmagic/form';
+import { FormState, MContainer } from '@tmagic/form';
 import { HookCodeType, HookType } from '@tmagic/schema';
 
 import type { Services } from '@editor/type';
 
 defineOptions({
-  name: 'MEditorCodeSelect',
+  name: 'MFieldsCodeSelect',
 });
 
 const emit = defineEmits(['change']);
@@ -63,7 +72,7 @@ const codeConfig = computed(() => ({
         {
           type: 'select',
           name: 'codeType',
-          span: 8,
+          span: 6,
           options: [
             { value: HookCodeType.CODE, text: '代码块' },
             { value: HookCodeType.DATA_SOURCE_METHOD, text: '数据源方法' },
@@ -82,7 +91,7 @@ const codeConfig = computed(() => ({
         {
           type: 'code-select-col',
           name: 'codeId',
-          span: 16,
+          span: 18,
           labelWidth: 0,
           display: (mForm: FormState, { model }: any) => model.codeType !== HookCodeType.DATA_SOURCE_METHOD,
           notEditable: () => !services?.codeBlockService.getEditStatus(),
@@ -90,7 +99,7 @@ const codeConfig = computed(() => ({
         {
           type: 'data-source-method-select',
           name: 'codeId',
-          span: 16,
+          span: 18,
           labelWidth: 0,
           display: (mForm: FormState, { model }: any) => model.codeType === HookCodeType.DATA_SOURCE_METHOD,
           notEditable: () => !services?.dataSourceService.get('editable'),

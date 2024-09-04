@@ -1,15 +1,15 @@
 <template>
   <Teleport to="body" v-if="visible">
-    <div ref="target" class="m-editor-float-box" :style="style" @mousedown="nextZIndex">
-      <div ref="dragTarget" class="m-editor-float-box-title">
+    <div ref="target" class="m-editor-float-box" :style="{ ...style, zIndex: curZIndex }" @mousedown="nextZIndex">
+      <div ref="titleEl" class="m-editor-float-box-title">
         <slot name="title">
           <span>{{ title }}</span>
         </slot>
         <div>
-          <TMagicButton link size="small" :icon="Close" @click="closeHandler"></TMagicButton>
+          <TMagicButton link size="small" @click="closeHandler"><MIcon :icon="Close"></MIcon></TMagicButton>
         </div>
       </div>
-      <div class="m-editor-float-box-body">
+      <div class="m-editor-float-box-body" :style="{ height: `${bodyHeight}px` }">
         <slot name="body"></slot>
       </div>
     </div>
@@ -17,46 +17,70 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, inject, nextTick, onBeforeUnmount, provide, ref, watch } from 'vue';
 import { Close } from '@element-plus/icons-vue';
 import VanillaMoveable from 'moveable';
 
 import { TMagicButton, useZIndex } from '@tmagic/design';
+
+import MIcon from '@editor/components/Icon.vue';
+import type { Services } from '@editor/type';
 
 interface Position {
   left: number;
   top: number;
 }
 
-interface Rect {
-  width: number | string;
-  height: number | string;
-}
+const width = defineModel<number>('width', { default: 0 });
+const height = defineModel<number>('height', { default: 0 });
+const visible = defineModel<boolean>('visible', { default: false });
 
-const props = withDefaults(defineProps<{ visible: boolean; position?: Position; rect?: Rect; title?: string }>(), {
-  visible: false,
-  title: '',
-  position: () => ({ left: 0, top: 0 }),
-  rect: () => ({ width: 'auto', height: 'auto' }),
-});
-
-const emit = defineEmits<{
-  'update:visible': [boolean];
-}>();
+const props = withDefaults(
+  defineProps<{
+    position?: Position;
+    title?: string;
+    beforeClose?: (done: (cancel?: boolean) => void) => void;
+  }>(),
+  {
+    title: '',
+    position: () => ({ left: 0, top: 0 }),
+  },
+);
 
 const target = ref<HTMLDivElement>();
-const dragTarget = ref<HTMLDivElement>();
+const titleEl = ref<HTMLDivElement>();
 
 const zIndex = useZIndex();
-const curZIndex = ref<number>(zIndex.nextZIndex());
+const curZIndex = ref<number>(0);
 
-const style = computed(() => ({
-  left: `${props.position.left}px`,
-  top: `${props.position.top}px`,
-  width: typeof props.rect.width === 'string' ? props.rect.width : `${props.rect.width}px`,
-  height: typeof props.rect.height === 'string' ? props.rect.height : `${props.rect.height}px`,
-  zIndex: curZIndex.value,
-}));
+const titleHeight = ref(0);
+const bodyHeight = computed(() => {
+  if (height.value) {
+    return height.value - titleHeight.value;
+  }
+
+  if (target.value) {
+    return target.value.clientHeight - titleHeight.value;
+  }
+
+  return 'auto';
+});
+
+const services = inject<Services>('services');
+const frameworkWidth = computed(() => services?.uiService.get('frameworkRect').width || 0);
+const style = computed(() => {
+  let { left } = props.position;
+  if (width.value) {
+    left = left + width.value > frameworkWidth.value ? frameworkWidth.value - width.value : left;
+  }
+
+  return {
+    left: `${left}px`,
+    top: `${props.position.top}px`,
+    width: width.value ? `${width.value}px` : 'auto',
+    height: height.value ? `${height.value}px` : 'auto',
+  };
+});
 
 let moveable: VanillaMoveable | null = null;
 
@@ -70,7 +94,7 @@ const initMoveable = () => {
     keepRatio: false,
     origin: false,
     snappable: true,
-    dragTarget: dragTarget.value,
+    dragTarget: titleEl.value,
     dragTargetSelf: false,
     linePadding: 10,
     controlPadding: 10,
@@ -82,6 +106,8 @@ const initMoveable = () => {
   });
 
   moveable.on('resize', (e) => {
+    width.value = e.width;
+    height.value = e.height;
     e.target.style.width = `${e.width}px`;
     e.target.style.height = `${e.height}px`;
     e.target.style.transform = e.drag.transform;
@@ -94,11 +120,23 @@ const destroyMoveable = () => {
 };
 
 watch(
-  () => props.visible,
+  visible,
   async (visible) => {
     if (visible) {
       await nextTick();
-      initMoveable();
+      curZIndex.value = zIndex.nextZIndex();
+
+      const targetRect = target.value?.getBoundingClientRect();
+      if (targetRect) {
+        width.value = targetRect.width;
+        height.value = targetRect.height;
+        initMoveable();
+      }
+
+      if (titleEl.value) {
+        const titleRect = titleEl.value.getBoundingClientRect();
+        titleHeight.value = titleRect.height;
+      }
     } else {
       destroyMoveable();
     }
@@ -112,15 +150,29 @@ onBeforeUnmount(() => {
   destroyMoveable();
 });
 
+const hide = (cancel?: boolean) => {
+  if (cancel !== false) {
+    visible.value = false;
+  }
+};
+
 const closeHandler = () => {
-  emit('update:visible', false);
+  if (typeof props.beforeClose === 'function') {
+    props.beforeClose(hide);
+  } else {
+    hide();
+  }
 };
 
 const nextZIndex = () => {
   curZIndex.value = zIndex.nextZIndex();
 };
 
+provide('parentFloating', target);
+
 defineExpose({
+  bodyHeight,
   target,
+  titleEl,
 });
 </script>

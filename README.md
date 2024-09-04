@@ -1,11 +1,3 @@
-<!--
- * @Author: pengchun pengchun@example.com
- * @Date: 2024-03-13 16:37:38
- * @LastEditors: pengchun pengchun@example.com
- * @LastEditTime: 2024-03-13 16:52:06
- * @FilePath: \tmagic-editor\README.md
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
--->
 # TMagic
 TMagic 可视化搭建平台。
 
@@ -26,7 +18,7 @@ https://tencent.github.io/tmagic-editor/playground/index.html
 
 node.js >= 18
 
-pnpm >= 8
+pnpm >= 9
 
 先安装 pnpm
 
@@ -53,9 +45,6 @@ $ pnpm playground
 http://localhost:8098/tmagic-editor/playground/
 
 即可得到一个魔方编辑器示例项目
-
-## ???
-在runtime/vue3目录下 分别pnpm build、pnpm dev
 
 ## magic-admin
 
@@ -94,6 +83,327 @@ tmagic-editor主要定位是搭建生成移动端H5页面，如果有搭建PC端
 
 如果你有好的意见或建议，欢迎给我们提 Issues 或 Pull Requests，为提升魔方可视化编辑器开发体验贡献力量。<br>详见：[CONTRIBUTING.md](./CONTRIBUTING.md)
 
+## 贡献者
+
+<a href="https://github.com/Tencent/tmagic-editor/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Tencent/tmagic-editor" />
+</a>
+
+
 ### 欢迎入群交流
 
 <img src="https://vfiles.gtimg.cn/vupload/20220412/b85d331649748582992.jpg" width=375>
+
+
+tmagic-editor                                                                              
+├─ docs                                                                                    
+│  ├─ api                                                                                  
+│  │  ├─ editor                                                                                     
+│  │  ├─ form                                                                                      
+│  │  ├─ stage                                                                             
+│  │  │  ├─ coreEvents.md                                                                  
+│  │  │  └─ coreMethods.md                                                                 
+│  │  └─ table                                                                                                   
+│  ├─ form-config                                                                          
+│  │  ├─ fields                                                                            
+│  ├─ guide                                                                                                                  
+│  ├─ public                                                                               
+│  │  ├─ tutorial                                                                                         
+│  └─ index.md                                                                             
+├─ packages                                                                                
+│  ├─ cli                                                                                  
+│  │  ├─ bin                                                                               
+│  │  │  └─ tmagic.js                                                                      
+│  │  ├─ lib                                                                                                                  
+│  │  ├─ src                                                                               
+│  │  ├─ package.json                                                                      
+│  │  └─ tsconfig.build.json                                                               
+│  ├─ core                                                                                                               
+│  ├─ data-source                                                                          
+│  ├─ dep                                                                                  
+│  │  ├─ dist                                                                              
+│  │  ├─ src                                                                               
+│  │  │  ├─ index.ts                                                                       
+│  │  │  ├─ Target.ts                                                                      
+│  │  │  ├─ types.ts                                                                       
+│  │  │  ├─ utils.ts                                                                       
+│  │  │  └─ Watcher.ts                                                                     
+│  │  ├─ tests                                                                             
+│  │  ├─ types                                                                             
+│  │  ├─ package.json                                                                      
+│  │  ├─ tsconfig.build.json                                                               
+│  │  ├─ tsconfig.json                                                                     
+│  │  └─ vite.config.ts                                                                    
+│  ├─ design                                                                               
+│  │  ├─ dist                                                                              
+│  │  ├─ src                                                                                                        
+│  │  ├─ types                                                                             
+│  │  ├─ package.json                                                                      
+│  │  ├─ tsconfig.build.json                                                               
+│  │  ├─ tsconfig.json                                                                     
+│  │  └─ vite.config.ts                                                                    
+│  ├─ editor                                                                               
+│  │  ├─ dist                                                                              
+│  │  ├─ src                                                                               
+│  │  ├─ tests                                                                             
+│  │  │  └─ unit                                                                           
+│  │  ├─ types                                                                                     
+│  │  ├─ package.json                                                                      
+│  │  ├─ README.md                                                                         
+│  │  ├─ tsconfig.build.json                                                               
+│  │  ├─ tsconfig.json                                                                     
+│  │  └─ vite.config.ts                                                                    
+│  ├─ element-plus-adapter                                                                 
+│  │  ├─ dist                                                                                      
+│  │  ├─ src                                                                                              
+│  │  ├─ types                                                                                                
+│  │  ├─ package.json                                                                      
+│  │  ├─ tsconfig.build.json                                                               
+│  │  ├─ tsconfig.json                                                                     
+│  │  └─ vite.config.ts                                                                    
+│  ├─ form                                                                                 
+│  │  ├─ dist                                                                                                 
+│  │  ├─ src                                                                               
+│  │  │  ├─ containers                                                                     
+│  │  │  │  ├─ Col.vue                                                                     
+│  │  │  ├─ fields                                                                         
+│  │  │  │  ├─ Cascader.vue                                                                      
+│  │  │  ├─ theme                                                                          
+│  │  │  │  ├─ date-time.scss                                                                
+│  │  │  ├─ utils                                                                          
+│  │  │  │  ├─ config.ts                                                                                                         
+│  │  │  ├─ Form.vue                                                                       
+│  │  │  ├─ FormBox.vue                                                                    
+│  │  │  ├─ FormDialog.vue                                                                 
+│  │  │  ├─ FormDrawer.vue                                                                 
+│  │  │  ├─ index.ts                                                                       
+│  │  │  ├─ schema.ts                                                                      
+│  │  │  └─ shims-vue.d.ts                                                                 
+│  │  ├─ tests                                                                             
+│  │  │  └─ unit                                                                              
+│  │  ├─ types                                                                                                      
+│  │  ├─ package.json                                                                      
+│  │  ├─ README.md                                                                         
+│  │  ├─ tsconfig.build.json                                                               
+│  │  ├─ tsconfig.json                                                                     
+│  │  └─ vite.config.ts                                                                    
+│  ├─ schema                                                                               
+│  │  ├─ dist                                                                              
+│  │  │  ├─ tmagic-schema.js                                                               
+│  │  │  └─ tmagic-schema.umd.cjs                                                          
+│  │  ├─ src                                                                               
+│  │  │  └─ index.ts                                                                       
+│  │  ├─ types                                                                             
+│  │  │  └─ index.d.ts                                                                     
+│  │  ├─ package.json                                                                      
+│  │  ├─ README.md                                                                         
+│  │  ├─ tsconfig.build.json                                                               
+│  │  ├─ tsconfig.json                                                                     
+│  │  └─ vite.config.ts                                                                    
+│  ├─ stage                                                                                
+│  │  ├─ dist                                                                                                  
+│  │  ├─ src                                                                                 
+│  │  ├─ tests                                                                             
+│  │  ├─ types                                                                                      
+│  │  ├─ package.json                                                                      
+│  │  ├─ README.md                                                                         
+│  │  ├─ tsconfig.build.json                                                               
+│  │  ├─ tsconfig.json                                                                     
+│  │  └─ vite.config.ts                                                                    
+│  ├─ table                                                                                
+│  │  ├─ dist                                                                              
+│  │  ├─ src                                                                                     
+│  │  ├─ types                                                                                          
+│  │  ├─ package.json                                                                      
+│  │  ├─ README.md                                                                         
+│  │  ├─ tsconfig.build.json                                                               
+│  │  ├─ tsconfig.json                                                                     
+│  │  └─ vite.config.ts                                                                    
+│  ├─ tdesign-vue-next-adapter                                                             
+│  │  ├─ dist                                                                                                        
+│  │  ├─ src                                                                                                
+│  │  ├─ types                                                                             
+│  │  │  └─ index.d.ts                                                                     
+│  │  ├─ package.json                                                                      
+│  │  ├─ tsconfig.build.json                                                               
+│  │  ├─ tsconfig.json                                                                     
+│  │  └─ vite.config.ts                                                                    
+│  ├─ ui                                                                                   
+│  │  ├─ src                                                                               
+│  │  ├─ package.json                                                                      
+│  │  ├─ README.md                                                                         
+│  │  └─ tsconfig.json                                                                     
+│  ├─ ui-react                                                                             
+│  │  ├─ package.json                                                                      
+│  │  └─ tsconfig.json                                                                     
+│  ├─ ui-vue2                                                                              
+│  │  └─ package.json                                                                      
+│  └─ utils                                                                                
+│     ├─ dist                                                                              
+│     │  ├─ tmagic-utils.js                                                                
+│     │  ├─ tmagic-utils.js.map                                                            
+│     │  ├─ tmagic-utils.umd.cjs                                                           
+│     │  └─ tmagic-utils.umd.cjs.map                                                       
+│     ├─ src                                                                               
+│     │  ├─ dom.ts                                                                         
+│     │  ├─ index.ts                                                                       
+│     │  └─ resetcss.css                                                                   
+│     ├─ tests                                                                             
+│     │  └─ unit                                                                           
+│     │     └─ index.spec.ts                                                               
+│     ├─ types                                                                             
+│     │  ├─ dom.d.ts                                                                       
+│     │  └─ index.d.ts                                                                     
+│     ├─ package.json                                                                      
+│     ├─ tsconfig.build.json                                                               
+│     ├─ tsconfig.json                                                                     
+│     └─ vite.config.ts                                                                    
+├─ playground                                                                              
+│  ├─ dist                                                                                 
+│  │  ├─ assets                                                                            
+│  │  ├─ entry                                                                             
+│  │  │  └─ vue3                                                                                             
+│  │  ├─ runtime                                                                           
+│  │  │  └─ vue3                                                                           
+│  │  ├─ favicon.png                                                                       
+│  │  └─ index.html                                                                        
+│  ├─ public                                                                               
+│  │  ├─ entry                                                                             
+│  │  │  └─ vue3                                                                           
+│  │  ├─ runtime                                                                           
+│  │  │  └─ vue3                                                                                           
+│  │  └─ favicon.png                                                                       
+│  ├─ src                                                                                  
+│  │  ├─ components                                                                        
+│  │  │  ├─ DeviceGroup.vue                                                                
+│  │  │  └─ NavMenu.vue                                                                    
+│  │  ├─ configs                                                                           
+│  │  │  ├─ componentGroupList.ts                                                          
+│  │  │  ├─ dsl.ts                                                                         
+│  │  │  └─ formDsl.ts                                                                     
+│  │  ├─ pages                                                                             
+│  │  │  ├─ Editor.vue                                                                     
+│  │  │  ├─ Form.vue                                                                       
+│  │  │  ├─ FormEditor.vue                                                                 
+│  │  │  └─ Table.vue                                                                      
+│  │  ├─ App.vue                                                                           
+│  │  ├─ const.ts                                                                          
+│  │  ├─ main.ts                                                                           
+│  │  ├─ route.ts                                                                          
+│  │  ├─ shims-vue.d.ts                                                                    
+│  │  └─ vite-env.d.ts                                                                     
+│  ├─ auto-imports.d.ts                                                                    
+│  ├─ components.d.ts                                                                      
+│  ├─ index.html                                                                           
+│  ├─ package.json                                                                         
+│  ├─ README.md                                                                            
+│  ├─ tsconfig.json                                                                        
+│  └─ vite.config.ts                                                                       
+├─ runtime                                                                                 
+│  ├─ react                                                                                
+│  │  ├─ page                                                                              
+│  │  │  ├─ App.tsx                                                                        
+│  │  │  ├─ index.html                                                                     
+│  │  │  └─ main.tsx                                                                       
+│  │  ├─ playground                                                                        
+│  │  │  ├─ App.tsx                                                                        
+│  │  │  ├─ index.html                                                                     
+│  │  │  └─ main.tsx                                                                       
+│  │  ├─ public                                                                            
+│  │  │  └─ favicon.png                                                                    
+│  │  ├─ build.vite.config.ts                                                              
+│  │  ├─ dev.vite.config.ts                                                                
+│  │  ├─ package.json                                                                      
+│  │  ├─ tmagic.config.ts                                                                  
+│  │  └─ tsconfig.json                                                                     
+│  ├─ tmagic-form                                                                          
+│  │  ├─ dist                                                                              
+│  │  │  ├─ tmagic-form-runtime.js                                                         
+│  │  │  └─ tmagic-form-runtime.umd.cjs                                                    
+│  │  ├─ src                                                                               
+│  │  │  ├─ form-config                                                                    
+│  │  │  │  ├─ checkbox.ts                                                                 
+│  │  │  │  ├─ common.ts                                                                   
+│  │  │  │  ├─ display.ts                                                                  
+│  │  │  │  ├─ index.ts                                                                    
+│  │  │  │  ├─ number.ts                                                                   
+│  │  │  │  ├─ switch.ts                                                                   
+│  │  │  │  └─ text.ts                                                                     
+│  │  │  ├─ App.vue                                                                        
+│  │  │  ├─ component-group-list.ts                                                        
+│  │  │  ├─ index.ts                                                                       
+│  │  │  ├─ types.ts                                                                       
+│  │  │  └─ useFormConfig.ts                                                               
+│  │  ├─ types                                                                             
+│  │  │  ├─ form-config                                                                    
+│  │  │  │  ├─ checkbox.d.ts                                                               
+│  │  │  │  ├─ common.d.ts                                                                 
+│  │  │  │  ├─ display.d.ts                                                                
+│  │  │  │  ├─ index.d.ts                                                                  
+│  │  │  │  ├─ number.d.ts                                                                 
+│  │  │  │  ├─ switch.d.ts                                                                 
+│  │  │  │  └─ text.d.ts                                                                   
+│  │  │  ├─ App.vue.d.ts                                                                   
+│  │  │  ├─ component-group-list.d.ts                                                      
+│  │  │  ├─ index.d.ts                                                                     
+│  │  │  ├─ types.d.ts                                                                     
+│  │  │  └─ useFormConfig.d.ts                                                             
+│  │  ├─ package.json                                                                      
+│  │  ├─ README.md                                                                         
+│  │  ├─ tsconfig.build.json                                                               
+│  │  ├─ tsconfig.json                                                                     
+│  │  └─ vite.config.ts                                                                    
+│  ├─ vue2                                                                                 
+│  │  ├─ page                                                                              
+│  │  │  ├─ utils                                                                          
+│  │  │  │  ├─ index.ts                                                                    
+│  │  │  │  └─ request.ts                                                                  
+│  │  │  ├─ App.vue                                                                        
+│  │  │  ├─ index.html                                                                     
+│  │  │  ├─ main.ts                                                                        
+│  │  │  └─ shims-vue.d.ts                                                                 
+│  │  ├─ playground                                                                        
+│  │  │  ├─ App.vue                                                                        
+│  │  │  ├─ index.html                                                                     
+│  │  │  ├─ main.ts                                                                        
+│  │  │  └─ shims-vue.d.ts                                                                 
+│  │  ├─ public                                                                            
+│  │  │  └─ favicon.png                                                                    
+│  │  ├─ build.vite.config.ts                                                              
+│  │  ├─ dev.vite.config.ts                                                                
+│  │  ├─ package.json                                                                      
+│  │  └─ tmagic.config.ts                                                                  
+│  └─ vue3                                                                                 
+│     ├─ page                                                                              
+│     │  ├─ utils                                                                          
+│     │  │  ├─ index.ts                                                                    
+│     │  │  └─ request.ts                                                                  
+│     │  ├─ App.vue                                                                        
+│     │  ├─ index.html                                                                     
+│     │  ├─ main.ts                                                                        
+│     │  └─ shims-vue.d.ts                                                                 
+│     ├─ playground                                                                        
+│     │  ├─ App.vue                                                                        
+│     │  ├─ index.html                                                                     
+│     │  ├─ main.ts                                                                        
+│     │  └─ shims-vue.d.ts                                                                 
+│     ├─ public                                                                            
+│     │  └─ favicon.png                                                                    
+│     ├─ build.vite.config.ts                                                              
+│     ├─ dev.vite.config.ts                                                                
+│     ├─ package.json                                                                      
+│     └─ tmagic.config.ts                                                                  
+├─ scripts                                                                                 
+│  └─ release.cjs                                                                          
+├─ CHANGELOG.md                                                                            
+├─ commitlint.config.cjs                                                                   
+├─ CONTRIBUTING.md                                                                         
+├─ LICENSE                                                                                 
+├─ package.json                                                                            
+├─ pnpm-lock.yaml                                                                          
+├─ pnpm-workspace.yaml                                                                     
+├─ prettier.cjs                                                                            
+├─ README.md                                                                               
+├─ tsconfig.json                                                                           
+├─ vite-env.d.ts                                                                           
+└─ vitest.config.ts  

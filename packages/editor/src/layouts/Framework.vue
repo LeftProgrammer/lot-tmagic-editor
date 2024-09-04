@@ -24,6 +24,7 @@
       :min-left="65"
       :min-right="20"
       :min-center="100"
+      :width="frameworkRect?.width || 0"
       @change="columnWidthChange"
     >
       <template #left>
@@ -37,9 +38,10 @@
         </slot>
 
         <slot name="page-bar">
-          <PageBar :disabled-page-fragment="disabledPageFragment">
+          <PageBar :disabled-page-fragment="disabledPageFragment" :page-bar-sort-options="pageBarSortOptions">
             <template #page-bar-title="{ page }"><slot name="page-bar-title" :page="page"></slot></template>
             <template #page-bar-popover="{ page }"><slot name="page-bar-popover" :page="page"></slot></template>
+            <template #page-list-popover="{ list }"><slot name="page-list-popover" :list="list"></slot></template>
           </PageBar>
         </slot>
       </template>
@@ -57,12 +59,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, inject, ref, watch } from 'vue';
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import { TMagicScrollbar } from '@tmagic/design';
 
 import SplitView from '@editor/components/SplitView.vue';
-import type { FrameworkSlots, GetColumnWidth, Services } from '@editor/type';
+import type { FrameworkSlots, GetColumnWidth, PageBarSortOptions, Services } from '@editor/type';
 import { getConfig } from '@editor/utils/config';
 
 import PageBar from './page-bar/PageBar.vue';
@@ -77,6 +79,7 @@ defineOptions({
 
 defineProps<{
   disabledPageFragment: boolean;
+  pageBarSortOptions?: PageBarSortOptions;
 }>();
 
 const DEFAULT_LEFT_COLUMN_WIDTH = 310;
@@ -101,40 +104,18 @@ const RIGHT_COLUMN_WIDTH_STORAGE_KEY = '$MagicEditorRightColumnWidthData';
 const getLeftColumnWidthCacheData = () =>
   Number(globalThis.localStorage.getItem(LEFT_COLUMN_WIDTH_STORAGE_KEY)) || DEFAULT_LEFT_COLUMN_WIDTH;
 
-const leftColumnWidthCacheData = getLeftColumnWidthCacheData();
-const RightColumnWidthCacheData =
+const getRightColumnWidthCacheData = () =>
   Number(globalThis.localStorage.getItem(RIGHT_COLUMN_WIDTH_STORAGE_KEY)) || DEFAULT_RIGHT_COLUMN_WIDTH;
 
 const columnWidth = ref<Partial<GetColumnWidth>>({
-  left: leftColumnWidthCacheData,
+  left: getLeftColumnWidthCacheData(),
   center: 0,
-  right: RightColumnWidthCacheData,
+  right: getRightColumnWidthCacheData(),
 });
 
-watch(
-  [pageLength, splitView],
-  () => {
-    splitView.value?.updateWidth();
-  },
-  {
-    immediate: true,
-  },
-);
-
-watch(
-  () => columnWidth.value.right,
-  (right) => {
-    if (typeof right === 'undefined') return;
-    globalThis.localStorage.setItem(RIGHT_COLUMN_WIDTH_STORAGE_KEY, `${right}`);
-  },
-);
-
-watch(
-  () => columnWidth.value.left,
-  (left) => {
-    globalThis.localStorage.setItem(LEFT_COLUMN_WIDTH_STORAGE_KEY, `${left}`);
-  },
-);
+watch(pageLength, () => {
+  splitView.value?.updateWidth();
+});
 
 watch(
   () => uiService?.get('hideSlideBar'),
@@ -144,11 +125,34 @@ watch(
 );
 
 const columnWidthChange = (columnW: GetColumnWidth) => {
-  columnWidth.value.left = columnW.left;
-  columnWidth.value.center = columnW.center;
-  columnWidth.value.right = columnW.right;
+  columnWidth.value = columnW;
+
+  globalThis.localStorage.setItem(LEFT_COLUMN_WIDTH_STORAGE_KEY, `${columnW.left}`);
+  globalThis.localStorage.setItem(RIGHT_COLUMN_WIDTH_STORAGE_KEY, `${columnW.right}`);
   uiService?.set('columnWidth', columnW);
 };
+
+const frameworkRect = computed(() => uiService?.get('frameworkRect'));
+
+const resizerObserver = new ResizeObserver((entries) => {
+  const { contentRect } = entries[0];
+  uiService?.set('frameworkRect', {
+    width: contentRect.width,
+    height: contentRect.height,
+    left: contentRect.left,
+    top: contentRect.top,
+  });
+});
+
+onMounted(() => {
+  if (content.value) {
+    resizerObserver.observe(content.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  resizerObserver.disconnect();
+});
 
 const saveCode = (value: string) => {
   try {

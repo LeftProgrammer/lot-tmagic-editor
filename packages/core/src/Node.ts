@@ -19,15 +19,7 @@
 import { EventEmitter } from 'events';
 
 import { DataSource } from '@tmagic/data-source';
-import type {
-  AppCore,
-  DeprecatedEventConfig,
-  EventConfig,
-  MComponent,
-  MContainer,
-  MPage,
-  MPageFragment,
-} from '@tmagic/schema';
+import type { AppCore, EventConfig, MComponent, MContainer, MNode, MPage, MPageFragment } from '@tmagic/schema';
 import { HookCodeType, HookType } from '@tmagic/schema';
 
 import type App from './App';
@@ -35,17 +27,17 @@ import type Page from './Page';
 import Store from './Store';
 
 interface NodeOptions {
-  config: MComponent | MContainer;
+  config: MNode;
   page?: Page;
   parent?: Node;
   app: App;
 }
 class Node extends EventEmitter {
-  public data: MComponent | MContainer | MPage | MPageFragment;
-  public style?: {
+  public data!: MNode;
+  public style!: {
     [key: string]: any;
   };
-  public events: DeprecatedEventConfig[] | EventConfig[];
+  public events: EventConfig[] = [];
   public instance?: any;
   public page?: Page;
   public parent?: Node;
@@ -58,14 +50,15 @@ class Node extends EventEmitter {
     this.page = options.page;
     this.parent = options.parent;
     this.app = options.app;
-    const { events } = options.config;
-    this.data = options.config;
-    this.events = events || [];
+    this.setData(options.config);
     this.listenLifeSafe();
   }
 
   public setData(data: MComponent | MContainer | MPage | MPageFragment) {
     this.data = data;
+    const { events, style } = data;
+    this.events = events || [];
+    this.style = style || {};
     this.emit('update-data');
   }
 

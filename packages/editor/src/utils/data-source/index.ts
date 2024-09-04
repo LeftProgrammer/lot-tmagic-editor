@@ -1,5 +1,6 @@
-import { FormConfig, FormState } from '@tmagic/form';
-import { DataSchema, DataSourceSchema } from '@tmagic/schema';
+import { CascaderOption, FormConfig, FormState } from '@tmagic/form';
+import { DataSchema, DataSourceFieldType, DataSourceSchema } from '@tmagic/schema';
+import { DATA_SOURCE_FIELDS_SELECT_VALUE_PREFIX, isNumber } from '@tmagic/utils';
 
 import BaseFormConfig from './formConfigs/base';
 import HttpFormConfig from './formConfigs/http';
@@ -32,7 +33,6 @@ const fillConfig = (config: FormConfig): FormConfig => [
       },
       {
         title: '事件配置',
-        display: false,
         items: [
           {
             name: 'events',
@@ -166,20 +166,26 @@ export const getDisplayField = (dataSources: DataSourceSchema[], key: string) =>
     let dsText = '';
     let ds: DataSourceSchema | undefined;
     let fields: DataSchema[] | undefined;
-
     // 将模块解析成数据源对应的值
-    match[1].split('.').forEach((item, index) => {
-      if (index === 0) {
-        ds = dataSources.find((ds) => ds.id === item);
-        dsText += ds?.title || item;
-        fields = ds?.fields;
-        return;
-      }
+    match[1]
+      .replaceAll(/\[(\d+)\]/g, '.$1')
+      .split('.')
+      .forEach((item, index) => {
+        if (index === 0) {
+          ds = dataSources.find((ds) => ds.id === item);
+          dsText += ds?.title || item;
+          fields = ds?.fields;
+          return;
+        }
 
-      const field = fields?.find((field) => field.name === item);
-      fields = field?.fields;
-      dsText += `.${field?.title || item}`;
-    });
+        if (isNumber(item)) {
+          dsText += `[${item}]`;
+        } else {
+          const field = fields?.find((field) => field.name === item);
+          fields = field?.fields;
+          dsText += `.${field?.title || item}`;
+        }
+      });
 
     displayState.push({
       type: 'var',
@@ -198,3 +204,46 @@ export const getDisplayField = (dataSources: DataSourceSchema[], key: string) =>
 
   return displayState;
 };
+
+export const getCascaderOptionsFromFields = (
+  fields: DataSchema[] = [],
+  dataSourceFieldType: DataSourceFieldType[] = ['any'],
+): CascaderOption[] => {
+  const child: CascaderOption[] = [];
+  fields.forEach((field) => {
+    if (!dataSourceFieldType.length) {
+      dataSourceFieldType.push('any');
+    }
+
+    let children: CascaderOption[] = [];
+    if (field.type && ['any', 'array', 'object'].includes(field.type)) {
+      children = getCascaderOptionsFromFields(field.fields, dataSourceFieldType);
+    }
+
+    const item = {
+      label: `${field.title || field.name}(${field.type})`,
+      value: field.name,
+      children,
+    };
+
+    const fieldType = field.type || 'any';
+    if (dataSourceFieldType.includes('any') || dataSourceFieldType.includes(fieldType)) {
+      child.push(item);
+      return;
+    }
+
+    if (!dataSourceFieldType.includes(fieldType) && !['array', 'object', 'any'].includes(fieldType)) {
+      return;
+    }
+
+    if (!children.length && ['object', 'array', 'any'].includes(field.type || '')) {
+      return;
+    }
+
+    child.push(item);
+  });
+  return child;
+};
+
+export const removeDataSourceFieldPrefix = (id?: string) =>
+  id?.replace(DATA_SOURCE_FIELDS_SELECT_VALUE_PREFIX, '') || '';

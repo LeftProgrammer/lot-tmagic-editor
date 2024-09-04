@@ -21,10 +21,12 @@ import serialize from 'serialize-javascript';
 import type { Id, MApp, MContainer, MNode, MPage, MPageFragment } from '@tmagic/schema';
 import { NodeType } from '@tmagic/schema';
 import type StageCore from '@tmagic/stage';
-import { getNodePath, isNumber, isPage, isPageFragment, isPop } from '@tmagic/utils';
+import { calcValueByFontsize, getNodePath, isNumber, isPage, isPageFragment, isPop } from '@tmagic/utils';
 
 import { Layout } from '@editor/type';
 export const COPY_STORAGE_KEY = '$MagicEditorCopyData';
+export const COPY_CODE_STORAGE_KEY = '$MagicEditorCopyCode';
+export const COPY_DS_STORAGE_KEY = '$MagicEditorCopyDataSource';
 
 /**
  * 获取所有页面配置
@@ -106,13 +108,16 @@ const getMiddleTop = (node: MNode, parentNode: MNode, stage: StageCore | null) =
   }
 
   const { height: parentHeight } = parentNode.style;
-
+  // wrapperHeight 是未 calcValue的高度, 所以要将其calcValueByFontsize一下, 否则在pad or pc端计算的结果有误
+  const { scrollTop = 0, wrapperHeight } = stage.mask;
+  const wrapperHeightDeal = calcValueByFontsize(stage.renderer.getDocument()!, wrapperHeight);
+  const scrollTopDeal = calcValueByFontsize(stage.renderer.getDocument()!, scrollTop);
   if (isPage(parentNode)) {
-    const { scrollTop = 0, wrapperHeight } = stage.mask;
-    return (wrapperHeight - height) / 2 + scrollTop;
+    return (wrapperHeightDeal - height) / 2 + scrollTopDeal;
   }
 
-  return (parentHeight - height) / 2;
+  // 如果容器的元素高度大于当前视口高度的2倍, 添加的元素居中位置也会看不见, 所以要取最小值计算
+  return (Math.min(parentHeight, wrapperHeightDeal) - height) / 2;
 };
 
 export const getInitPositionStyle = (style: Record<string, any> = {}, layout: Layout) => {
@@ -238,8 +243,12 @@ export const fixNodeLeft = (config: MNode, parent: MContainer, doc?: Document) =
   const parentEl = doc.getElementById(`${parent.id}`);
 
   const left = Number(config.style?.left) || 0;
-  if (el && parentEl && el.offsetWidth + left > parentEl.offsetWidth) {
-    return parentEl.offsetWidth - el.offsetWidth;
+  if (el && parentEl) {
+    const calcParentOffsetWidth = calcValueByFontsize(doc, parentEl.offsetWidth);
+    const calcElOffsetWidth = calcValueByFontsize(doc, el.offsetWidth);
+    if (calcElOffsetWidth + left > calcParentOffsetWidth) {
+      return calcParentOffsetWidth - calcElOffsetWidth;
+    }
   }
 
   return config.style.left;
@@ -276,10 +285,29 @@ export const traverseNode = <T extends NodeItem = NodeItem>(
 ) => {
   cb(node, parents);
 
-  if (node.items?.length) {
+  if (Array.isArray(node.items) && node.items.length) {
     parents.push(node);
     node.items.forEach((item) => {
       traverseNode(item as T, cb, [...parents]);
     });
+  }
+};
+
+export const moveItemsInContainer = (sourceIndices: number[], parent: MContainer, targetIndex: number) => {
+  sourceIndices.sort((a, b) => a - b);
+  for (let i = sourceIndices.length - 1; i >= 0; i--) {
+    const sourceIndex = sourceIndices[i];
+    if (sourceIndex === targetIndex) {
+      continue;
+    }
+    const [item] = parent.items.splice(sourceIndex, 1);
+    parent.items.splice(sourceIndex < targetIndex ? targetIndex - 1 : targetIndex, 0, item);
+
+    // 更新后续源索引（因为数组已经改变）
+    for (let j = i - 1; j >= 0; j--) {
+      if (sourceIndices[j] >= targetIndex) {
+        sourceIndices[j] += 1;
+      }
+    }
   }
 };

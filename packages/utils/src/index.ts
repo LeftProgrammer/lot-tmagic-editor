@@ -25,8 +25,6 @@ import { NodeType } from '@tmagic/schema';
 
 export * from './dom';
 
-dayjs.extend(utc);
-
 export const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => {
     const timer = setTimeout(() => {
@@ -41,17 +39,17 @@ export const datetimeFormatter = (
   format = 'YYYY-MM-DD HH:mm:ss',
 ): string | number => {
   if (v) {
-    let time = null;
+    let time: string | number;
     if (['x', 'timestamp'].includes(format)) {
       time = dayjs(v).valueOf();
     } else if ((typeof v === 'string' && v.includes('Z')) || v.constructor === Date) {
+      dayjs.extend(utc);
       // UTC字符串时间或Date对象格式化为北京时间
       time = dayjs(v).utcOffset(8).format(format);
     } else {
       time = dayjs(v).format(format);
     }
 
-    // 格式化为北京时间
     if (time !== 'Invalid Date') {
       return time;
     }
@@ -165,20 +163,22 @@ export const guid = (digit = 8): string =>
     return v.toString(16);
   });
 
-export const getValueByKeyPath: any = (keys = '', data: Record<string | number, any> = {}) =>
+export const getValueByKeyPath = (
+  keys: number | string | string[] = '',
+  data: Record<string | number, any> = {},
+): any => {
   // 将 array[0] 转成 array.0
-  keys
-    .replaceAll(/\[(\d+)\]/g, '.$1')
-    .split('.')
-    .reduce((accumulator, currentValue: any) => {
-      if (isObject(accumulator) || Array.isArray(accumulator)) {
-        return accumulator[currentValue];
-      }
+  const keyArray = Array.isArray(keys) ? keys : `${keys}`.replaceAll(/\[(\d+)\]/g, '.$1').split('.');
+  return keyArray.reduce((accumulator, currentValue: any) => {
+    if (isObject(accumulator) || Array.isArray(accumulator)) {
+      return accumulator[currentValue];
+    }
 
-      return void 0;
-    }, data);
+    return void 0;
+  }, data);
+};
 
-export const setValueByKeyPath: any = (keys: string, value: any, data: Record<string | number, any> = {}) =>
+export const setValueByKeyPath = (keys: string | number, value: any, data: Record<string | number, any> = {}): any =>
   objectSet(data, keys, value);
 
 export const getNodes = (ids: Id[], data: MNode[] = []): MNode[] => {
@@ -249,7 +249,8 @@ export const replaceChildNode = (newNode: MNode, data?: MNode[], parentId?: Id) 
   parent.items.splice(index, 1, newNode);
 };
 
-export const DSL_NODE_KEY_COPY_PREFIX = '__magic__';
+export const DSL_NODE_KEY_COPY_PREFIX = '__tmagic__';
+export const IS_DSL_NODE_KEY = '__tmagic__dslNode';
 
 export const compiledNode = (
   compile: (value: any) => any,
@@ -266,13 +267,20 @@ export const compiledNode = (
   }
 
   keys.forEach((key) => {
-    const cacheKey = `${DSL_NODE_KEY_COPY_PREFIX}${key}`;
+    const keys = `${key}`.replaceAll(/\[(\d+)\]/g, '.$1').split('.');
+
+    const cacheKey = keys.map((key, index) => {
+      if (index < keys.length - 1) {
+        return key;
+      }
+      return `${DSL_NODE_KEY_COPY_PREFIX}${key}`;
+    });
 
     const value = getValueByKeyPath(key, node);
     let templateValue = getValueByKeyPath(cacheKey, node);
 
     if (typeof templateValue === 'undefined') {
-      setValueByKeyPath(cacheKey, value, node);
+      setValueByKeyPath(cacheKey.join('.'), value, node);
       templateValue = value;
     }
 
@@ -384,6 +392,8 @@ export const getDefaultValueFromFields = (fields: DataSchema[]) => {
 
 export const DATA_SOURCE_FIELDS_SELECT_VALUE_PREFIX = 'ds-field::';
 
+export const DATA_SOURCE_FIELDS_CHANGE_EVENT_PREFIX = 'ds-field-changed';
+
 export const getKeys = Object.keys as <T extends object>(obj: T) => Array<keyof T>;
 
 export const calculatePercentage = (value: number, percentageStr: string) => {
@@ -404,4 +414,24 @@ export const convertToNumber = (value: number | string, parentValue = 0) => {
   }
 
   return parseFloat(value);
+};
+
+/**
+ * 添加参数到URL
+ * @param obj 参数对象
+ * @param global window对象
+ * @param needReload 是否需要刷新
+ */
+export const addParamToUrl = (obj: Record<string, any>, global = globalThis, needReload = true) => {
+  const url = new URL(global.location.href);
+  const { searchParams } = url;
+  for (const [k, v] of Object.entries(obj)) {
+    searchParams.set(k, v);
+  }
+  const newUrl = url.toString();
+  if (needReload) {
+    global.location.href = newUrl;
+  } else {
+    global.history.pushState({}, '', url);
+  }
 };

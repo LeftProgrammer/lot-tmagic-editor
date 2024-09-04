@@ -17,18 +17,18 @@
  */
 
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { cloneDeep } from 'lodash-es';
 
 import Core from '@tmagic/core';
-import { DataSourceManager } from '@tmagic/data-source';
+import { DataSourceManager, DeepObservedData } from '@tmagic/data-source';
 import type { MApp } from '@tmagic/schema';
 import type { RemoveData, SortEventData, UpdateData } from '@tmagic/stage';
 import { AppContent } from '@tmagic/ui-react';
 import { replaceChildNode } from '@tmagic/utils';
 
 import components from '../.tmagic/comp-entry';
-import datasources from '../.tmagic/datasource-entry';
+import dataSources from '../.tmagic/datasource-entry';
 import plugins from '../.tmagic/plugin-entry';
 
 import App from './App';
@@ -41,8 +41,10 @@ declare global {
   }
 }
 
-Object.entries(datasources).forEach(([type, ds]: [string, any]) => {
-  DataSourceManager.registe(type, ds);
+DataSourceManager.registerObservedData(DeepObservedData);
+
+Object.entries(dataSources).forEach(([type, ds]: [string, any]) => {
+  DataSourceManager.register(type, ds);
 });
 
 const app = new Core({
@@ -64,13 +66,13 @@ const updateConfig = (root: MApp) => {
 };
 
 const renderDom = () => {
-  ReactDOM.render(
+  const root = createRoot(document.getElementById('root')!);
+  root.render(
     <React.StrictMode>
       <AppContent.Provider value={app}>
         <App />
       </AppContent.Provider>
     </React.StrictMode>,
-    document.getElementById('root'),
   );
 
   setTimeout(() => {
@@ -113,8 +115,9 @@ const operations = {
     updateConfig(root);
   },
 
-  update({ config, root }: UpdateData) {
-    replaceChildNode(app.dataSourceManager?.compiledNode(config, undefined, true) || config, root.items);
+  update({ config, root, parentId }: UpdateData) {
+    const newNode = app.dataSourceManager?.compiledNode(config, undefined, true) || config;
+    replaceChildNode(newNode, [root], parentId);
     updateConfig(cloneDeep(root));
   },
 
@@ -130,7 +133,7 @@ const operations = {
 Object.keys(components).forEach((type: string) => app.registerComponent(type, components[type]));
 
 Object.values(plugins).forEach((plugin: any) => {
-  plugin.install(app);
+  plugin.install({ app });
 });
 
 // @ts-ignore

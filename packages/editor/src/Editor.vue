@@ -1,5 +1,5 @@
 <template>
-  <Framework :disabled-page-fragment="disabledPageFragment">
+  <Framework :disabled-page-fragment="disabledPageFragment" :page-bar-sort-options="pageBarSortOptions">
     <template #header>
       <slot name="header"></slot>
     </template>
@@ -31,6 +31,10 @@
 
           <template #layer-node-tool="{ data }">
             <slot name="layer-node-tool" :data="data"></slot>
+          </template>
+
+          <template #component-list="{ componentGroupList }">
+            <slot name="component-list" :component-group-list="componentGroupList"></slot>
           </template>
 
           <template #component-list-panel-header>
@@ -81,6 +85,7 @@
       <slot name="props-panel">
         <PropsPanel
           :extend-state="extendFormState"
+          :disabled-show-src="disabledShowSrc"
           @mounted="(instance: any) => $emit('props-panel-mounted', instance)"
           @form-error="(e: any) => $emit('props-form-error', e)"
           @submit-error="(e: any) => $emit('props-submit-error', e)"
@@ -105,10 +110,13 @@
     <template #page-bar><slot name="page-bar"></slot></template>
     <template #page-bar-title="{ page }"><slot name="page-bar-title" :page="page"></slot></template>
     <template #page-bar-popover="{ page }"><slot name="page-bar-popover" :page="page"></slot></template>
+    <template #page-list-popover="{ list }"><slot name="page-list-popover" :list="list"></slot></template>
   </Framework>
 </template>
 
 <script lang="ts" setup>
+import { EventEmitter } from 'events';
+
 import { provide } from 'vue';
 
 import type { MApp } from '@tmagic/schema';
@@ -133,7 +141,7 @@ import uiService from './services/ui';
 import keybindingConfig from './utils/keybinding-config';
 import { defaultEditorProps, EditorProps } from './editorProps';
 import { initServiceEvents, initServiceState } from './initService';
-import type { FrameworkSlots, PropsPanelSlots, Services, SidebarSlots, WorkspaceSlots } from './type';
+import type { EventBus, FrameworkSlots, PropsPanelSlots, Services, SidebarSlots, WorkspaceSlots } from './type';
 
 defineSlots<
   FrameworkSlots &
@@ -201,6 +209,8 @@ provide('services', services);
 
 provide('codeOptions', props.codeOptions);
 provide('stageOptions', stageOptions);
+
+provide<EventBus>('eventBus', new EventEmitter());
 
 defineExpose(services);
 </script>

@@ -1,17 +1,16 @@
 <template>
-  <div class="magic-ui-iterator-container" :id="`${config.id || ''}`" :style="style">
+  <div class="magic-ui-iterator-container">
     <Container v-for="(item, index) in configs" :key="index" :config="item"></Container>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, inject } from 'vue';
+import { computed } from 'vue';
 
-import Core from '@tmagic/core';
-import type { MContainer } from '@tmagic/schema';
+import { type DisplayCond, type MContainer, NodeType } from '@tmagic/schema';
+import { useApp } from '@tmagic/vue-runtime-help';
 
 import Container from '../../container';
-import useApp from '../../useApp';
 
 const props = withDefaults(
   defineProps<{
@@ -21,6 +20,7 @@ const props = withDefaults(
       dsField: string[];
       itemConfig: {
         layout: string;
+        displayConds: DisplayCond[];
         style: Record<string, string | number>;
       };
     };
@@ -31,33 +31,42 @@ const props = withDefaults(
   },
 );
 
-const app: Core | undefined = inject('app');
-
-const style = computed(() => app?.transformStyle(props.config.style || {}));
+const { app } = useApp({
+  config: props.config,
+  methods: {},
+});
 
 const configs = computed(() => {
-  const { iteratorData = [] } = props.config;
+  let { iteratorData = [] } = props.config;
+
+  if (!Array.isArray(iteratorData)) {
+    iteratorData = [];
+  }
 
   if (app?.platform === 'editor' && !iteratorData.length) {
     iteratorData.push({});
   }
 
-  return iteratorData.map((itemData) => ({
-    items:
-      app?.dataSourceManager?.compliedIteratorItems(itemData, props.config.items, props.config.dsField) ??
-      props.config.items,
-    id: '',
-    style: {
-      ...props.config.itemConfig.style,
-      position: 'relative',
-      left: 0,
-      top: 0,
-    },
-  }));
-});
+  return iteratorData.map((itemData) => {
+    const condResult =
+      app?.platform !== 'editor'
+        ? app?.dataSourceManager?.compliedIteratorItemConds(itemData, props.config.itemConfig.displayConds) ?? true
+        : true;
 
-useApp({
-  config: props.config,
-  methods: {},
+    return {
+      items:
+        app?.dataSourceManager?.compliedIteratorItems(itemData, props.config.items, props.config.dsField) ??
+        props.config.items,
+      id: '',
+      type: NodeType.CONTAINER,
+      condResult,
+      style: {
+        ...props.config.itemConfig.style,
+        position: 'relative',
+        left: 0,
+        top: 0,
+      },
+    };
+  });
 });
 </script>

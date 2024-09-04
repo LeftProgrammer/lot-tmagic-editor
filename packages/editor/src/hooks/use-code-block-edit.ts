@@ -20,7 +20,7 @@ export const useCodeBlockEdit = (codeBlockService?: CodeBlockService) => {
     }
 
     codeConfig.value = {
-      name: '代码块',
+      name: '',
       content: `({app, params}) => {\n  // place your code here\n}`,
       params: [],
     };
@@ -66,8 +66,6 @@ export const useCodeBlockEdit = (codeBlockService?: CodeBlockService) => {
     if (!codeId.value) return;
 
     await codeBlockService?.setCodeDslById(codeId.value, values);
-
-    tMagicMessage.success('代码块保存成功');
 
     codeBlockEditor.value?.hide();
   };

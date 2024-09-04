@@ -161,23 +161,12 @@ export const addSelectedClassName = (el: Element, doc: Document) => {
   });
 };
 
-export const calcValueByFontsize = (doc: Document, value: number) => {
-  const { fontSize } = doc.documentElement.style;
-
-  if (fontSize) {
-    const times = globalThis.parseFloat(fontSize) / 100;
-    return Number((value / times).toFixed(2));
-  }
-
-  return value;
-};
-
 /**
  * 下移组件位置
  * @param {number} deltaTop 偏移量
  * @param {Object} detail 当前选中的组件配置
  */
-export const down = (deltaTop: number, target: TargetElement): SortEventData | void => {
+export const down = (deltaTop: number, target: TargetElement): SortEventData => {
   let swapIndex = 0;
   let addUpH = target.clientHeight;
   const brothers = Array.from(target.parentNode?.children || []).filter(
@@ -213,7 +202,7 @@ export const down = (deltaTop: number, target: TargetElement): SortEventData | v
  * @param {number} deltaTop 偏移量
  * @param {Object} detail 当前选中的组件配置
  */
-export const up = (deltaTop: number, target: TargetElement): SortEventData | void => {
+export const up = (deltaTop: number, target: TargetElement): SortEventData => {
   const brothers = Array.from(target.parentNode?.children || []).filter(
     (node) => !node.id.startsWith(GHOST_EL_ID_PREFIX),
   );

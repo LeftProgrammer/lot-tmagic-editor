@@ -1,52 +1,45 @@
 <template>
-  <div
-    v-if="display()"
-    :id="`${config.id || ''}`"
-    :class="`magic-ui-container magic-layout-${config.layout}${config.className ? ` ${config.className}` : ''}`"
-    :style="style"
-  >
-    <slot></slot>
-    <MComponent v-for="item in config.items" :key="item.id" :config="item"></MComponent>
+  <div v-if="display(config)" :id="`${config.id}`" :class="className" :style="app?.transformStyle(config.style || {})">
+    <slot>
+      <template v-for="item in config.items">
+        <component
+          v-if="display(item)"
+          :key="item.id"
+          :is="`magic-ui-${toLine(item.type)}`"
+          :id="item.id"
+          :class="`${item.className || ''}`"
+          :style="app?.transformStyle(item.style || {})"
+          :config="{ ...item, [IS_DSL_NODE_KEY]: true }"
+        ></component>
+      </template>
+    </slot>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, inject } from 'vue';
+import { computed } from 'vue';
 
-import Core from '@tmagic/core';
-import type { MContainer } from '@tmagic/schema';
+import type { MContainer, UiComponentProps } from '@tmagic/schema';
+import { IS_DSL_NODE_KEY, toLine } from '@tmagic/utils';
+import { useApp } from '@tmagic/vue-runtime-help';
 
-import MComponent from '../../Component.vue';
-import useApp from '../../useApp';
-import useCommonMethod from '../../useCommonMethod';
+const props = withDefaults(defineProps<UiComponentProps<MContainer>>(), {
+  model: () => ({}),
+});
 
-const props = withDefaults(
-  defineProps<{
-    config: MContainer;
-    model?: any;
-  }>(),
-  {
-    model: () => ({}),
-  },
-);
-
-const app: Core | undefined = inject('app');
-
-const style = computed(() => app?.transformStyle(props.config.style || {}));
-
-const display = () => {
-  const displayCfg = props.config?.display;
-
-  if (typeof displayCfg === 'function') {
-    return displayCfg(app);
-  }
-  return displayCfg !== false;
-};
-
-useApp({
+const { display, app } = useApp({
   config: props.config,
-  methods: {
-    ...useCommonMethod(props),
-  },
+  methods: {},
+});
+
+const className = computed(() => {
+  const list = ['magic-ui-container'];
+  if (props.config.layout) {
+    list.push(`magic-layout-${props.config.layout}`);
+  }
+  if (props.config.className) {
+    list.push(props.config.className);
+  }
+  return list.join(' ');
 });
 </script>

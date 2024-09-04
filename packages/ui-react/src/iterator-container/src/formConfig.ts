@@ -23,12 +23,15 @@ export default [
     text: '数据源数据',
     value: 'value',
     dataSourceFieldType: ['array'],
-    checkStrictly: false,
+    checkStrictly: true,
     type: 'data-source-field-select',
     onChange: (vm: any, v: string[] = [], { model }: any) => {
-      const [dsId, ...keys] = v;
-      model.dsField = [dsId.replace(DATA_SOURCE_FIELDS_SELECT_VALUE_PREFIX, ''), ...keys];
-      return v;
+      if (Array.isArray(v) && v.length > 1) {
+        const [dsId, ...keys] = v;
+        model.dsField = [dsId.replace(DATA_SOURCE_FIELDS_SELECT_VALUE_PREFIX, ''), ...keys];
+      } else {
+        model.dsField = [];
+      }
     },
   },
   {

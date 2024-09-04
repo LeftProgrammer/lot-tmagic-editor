@@ -18,9 +18,9 @@
 
 import { EventEmitter } from 'events';
 
-import { has, isEmpty } from 'lodash-es';
+import { has, isArray, isEmpty } from 'lodash-es';
 
-import { createDataSourceManager, DataSourceManager } from '@tmagic/data-source';
+import { createDataSourceManager, DataSource, DataSourceManager, ObservedDataClass } from '@tmagic/data-source';
 import {
   ActionType,
   type AppCore,
@@ -28,19 +28,21 @@ import {
   type CodeItemConfig,
   type CompItemConfig,
   type DataSourceItemConfig,
-  type DeprecatedEventConfig,
+  type EventActionItem,
   type EventConfig,
   type Id,
   type JsEngine,
   type MApp,
   type RequestFunction,
 } from '@tmagic/schema';
+import { DATA_SOURCE_FIELDS_CHANGE_EVENT_PREFIX } from '@tmagic/utils';
 
 import Env from './Env';
 import { bindCommonEventListener, isCommonMethod, triggerCommonMethod } from './events';
+import Flexible from './Flexible';
 import Node from './Node';
 import Page from './Page';
-import { fillBackgroundImage, isNumber, style2Obj } from './utils';
+import { transformStyle as defaultTransformStyle } from './utils';
 
 interface AppOptionsConfig {
   ua?: string;
@@ -52,10 +54,11 @@ interface AppOptionsConfig {
   useMock?: boolean;
   transformStyle?: (style: Record<string, any>) => Record<string, any>;
   request?: RequestFunction;
+  DataSourceObservedData?: ObservedDataClass;
 }
 
 interface EventCache {
-  eventConfig: CompItemConfig | DeprecatedEventConfig;
+  eventConfig: CompItemConfig;
   fromCpt: any;
   args: any[];
 }
@@ -70,15 +73,18 @@ class App extends EventEmitter implements AppCore {
 
   public useMock = false;
   public platform = 'mobile';
-  public jsEngine = 'browser';
-  public designWidth = 375;
+  public jsEngine: JsEngine = 'browser';
   public request?: RequestFunction;
 
   public components = new Map();
 
   public eventQueueMap: Record<string, EventCache[]> = {};
+  public transformStyle: (style: Record<string, any>) => Record<string, any>;
+
+  public flexible?: Flexible;
 
   private eventList = new Map<(fromCpt: Node, ...args: any[]) => void, string>();
+  private dataSourceEventList = new Map<string, Map<string, (...args: any[]) => void>>();
 
   constructor(options: AppOptionsConfig) {
     super();
@@ -93,13 +99,12 @@ class App extends EventEmitter implements AppCore {
       this.useMock = options.useMock;
     }
 
-    if (typeof options.designWidth !== 'undefined') {
-      this.setDesignWidth(options.designWidth);
+    if (this.jsEngine === 'browser') {
+      this.flexible = new Flexible({ designWidth: options.designWidth });
     }
 
-    if (options.transformStyle) {
-      this.transformStyle = options.transformStyle;
-    }
+    this.transformStyle =
+      options.transformStyle || ((style: Record<string, any>) => defaultTransformStyle(style, this.jsEngine));
 
     if (options.request) {
       this.request = options.request;
@@ -117,52 +122,7 @@ class App extends EventEmitter implements AppCore {
   }
 
   public setDesignWidth(width: number) {
-    this.designWidth = width;
-    // 根据屏幕大小计算出跟节点的font-size，用于rem样式的适配
-    if (this.jsEngine === 'browser') {
-      this.calcFontsize();
-      globalThis.removeEventListener('resize', this.calcFontsize);
-      globalThis.addEventListener('resize', this.calcFontsize);
-    }
-  }
-
-  /**
-   * 将dsl中的style配置转换成css，主要是将数值转成rem为单位的样式值，例如100将被转换成1rem
-   * @param style Object
-   * @returns Object
-   */
-  public transformStyle(style: Record<string, any> | string) {
-    if (!style) {
-      return {};
-    }
-
-    let styleObj: Record<string, any> = {};
-    const results: Record<string, any> = {};
-
-    if (typeof style === 'string') {
-      styleObj = style2Obj(style);
-    } else {
-      styleObj = { ...style };
-    }
-
-    const isHippy = this.jsEngine === 'hippy';
-
-    const whiteList = ['zIndex', 'opacity', 'fontWeight'];
-    Object.entries(styleObj).forEach(([key, value]) => {
-      if (key === 'scale' && !results.transform && isHippy) {
-        results.transform = [{ scale: value }];
-      } else if (key === 'backgroundImage' && !isHippy) {
-        value && (results[key] = fillBackgroundImage(value));
-      } else if (key === 'transform' && typeof value !== 'string') {
-        results[key] = this.getTransform(value);
-      } else if (!whiteList.includes(key) && value && /^[-]?[0-9]*[.]?[0-9]*$/.test(value)) {
-        results[key] = isHippy ? value : `${value / 100}rem`;
-      } else {
-        results[key] = value;
-      }
-    });
-
-    return results;
+    this.flexible?.setDesignWidth(width);
   }
 
   /**
@@ -248,8 +208,8 @@ class App extends EventEmitter implements AppCore {
     this.components.delete(type);
   }
 
-  public resolveComponent(type: string) {
-    return this.components.get(type);
+  public resolveComponent<T = any>(type: string) {
+    return this.components.get(type) as T;
   }
 
   public bindEvents() {
@@ -263,15 +223,26 @@ class App extends EventEmitter implements AppCore {
     if (!this.page) return;
 
     for (const [, value] of this.page.nodes) {
-      value.events?.forEach((event) => {
-        const eventName = `${event.name}_${value.data.id}`;
-        const eventHandler = (fromCpt: Node, ...args: any[]) => {
-          this.eventHandler(event, fromCpt, args);
+      value.events?.forEach((event, index) => {
+        let eventName = `${event.name}_${value.data.id}`;
+        let eventHandler = (fromCpt: Node, ...args: any[]) => {
+          this.eventHandler(index, fromCpt, args);
         };
+
+        // 页面片容器可以配置页面片内组件的事件，形式为“${nodeId}.${eventName}”
+        const eventNames = event.name.split('.');
+        if (eventNames.length > 1) {
+          eventName = `${eventNames[1]}_${eventNames[0]}`;
+          eventHandler = (fromCpt: Node, ...args: any[]) => {
+            this.eventHandler(index, value, args);
+          };
+        }
+
         this.eventList.set(eventHandler, eventName);
         this.on(eventName, eventHandler);
       });
     }
+    this.bindDataSourceEvents();
   }
 
   public emit(name: string | symbol, ...args: any[]): boolean {
@@ -290,8 +261,9 @@ class App extends EventEmitter implements AppCore {
   public async codeActionHandler(eventConfig: CodeItemConfig, args: any[]) {
     const { codeId = '', params = {} } = eventConfig;
     if (!codeId || isEmpty(this.codeDsl)) return;
-    if (this.codeDsl![codeId] && typeof this.codeDsl![codeId]?.content === 'function') {
-      await this.codeDsl![codeId].content({ app: this, params, eventParams: args });
+    const content = this.codeDsl?.[codeId]?.content;
+    if (typeof content === 'function') {
+      await content({ app: this, params, eventParams: args });
     }
   }
 
@@ -300,10 +272,15 @@ class App extends EventEmitter implements AppCore {
    * @param eventConfig 联动组件的配置
    * @returns void
    */
-  public async compActionHandler(eventConfig: CompItemConfig | DeprecatedEventConfig, fromCpt: any, args: any[]) {
+  public async compActionHandler(eventConfig: CompItemConfig, fromCpt: Node | DataSource, args: any[]) {
     if (!this.page) throw new Error('当前没有页面');
 
-    const { method: methodName, to } = eventConfig;
+    let { method: methodName, to } = eventConfig;
+
+    if (isArray(methodName)) {
+      [to, methodName] = methodName;
+    }
+
     const toNode = this.page.getNode(to);
     if (!toNode) throw `ID为${to}的组件不存在`;
 
@@ -350,35 +327,82 @@ class App extends EventEmitter implements AppCore {
     this.removeAllListeners();
     this.page = undefined;
 
-    if (this.jsEngine === 'browser') {
-      globalThis.removeEventListener('resize', this.calcFontsize);
+    this.flexible?.destroy();
+    this.flexible = undefined;
+  }
+
+  private bindDataSourceEvents() {
+    if (this.platform === 'editor') return;
+
+    // 先清掉之前注册的事件，重新注册
+    Array.from(this.dataSourceEventList.keys()).forEach((dataSourceId) => {
+      const dataSourceEvent = this.dataSourceEventList.get(dataSourceId)!;
+      Array.from(dataSourceEvent.keys()).forEach((eventName) => {
+        const [prefix, ...path] = eventName.split('.');
+        if (prefix === DATA_SOURCE_FIELDS_CHANGE_EVENT_PREFIX) {
+          this.dataSourceManager?.offDataChange(dataSourceId, path.join('.'), dataSourceEvent.get(eventName)!);
+        } else {
+          this.dataSourceManager?.get(dataSourceId)?.off(prefix, dataSourceEvent.get(eventName)!);
+        }
+      });
+    });
+
+    (this.dsl?.dataSources || []).forEach((dataSource) => {
+      const dataSourceEvent = this.dataSourceEventList.get(dataSource.id) ?? new Map<string, (args: any) => void>();
+      (dataSource.events || []).forEach((event) => {
+        const [prefix, ...path] = event.name?.split('.') || [];
+        if (!prefix) return;
+        const handler = (...args: any[]) => {
+          this.eventHandler(event, this.dataSourceManager?.get(dataSource.id), args);
+        };
+        dataSourceEvent.set(event.name, handler);
+        if (prefix === DATA_SOURCE_FIELDS_CHANGE_EVENT_PREFIX) {
+          // 数据源数据变化
+          this.dataSourceManager?.onDataChange(dataSource.id, path.join('.'), handler);
+        } else {
+          // 数据源自定义事件
+          this.dataSourceManager?.get(dataSource.id)?.on(prefix, handler);
+        }
+      });
+      this.dataSourceEventList.set(dataSource.id, dataSourceEvent);
+    });
+  }
+
+  private async actionHandler(actionItem: EventActionItem, fromCpt: Node | DataSource, args: any[]) {
+    if (actionItem.actionType === ActionType.COMP) {
+      // 组件动作
+      await this.compActionHandler(actionItem as CompItemConfig, fromCpt, args);
+    } else if (actionItem.actionType === ActionType.CODE) {
+      // 执行代码块
+      await this.codeActionHandler(actionItem as CodeItemConfig, args);
+    } else if (actionItem.actionType === ActionType.DATA_SOURCE) {
+      await this.dataSourceActionHandler(actionItem as DataSourceItemConfig, args);
     }
   }
 
   /**
    * 事件联动处理函数
-   * @param eventConfig 事件配置
+   * @param eventsConfigIndex 事件配置索引，可以通过此索引从node.event中获取最新事件配置
    * @param fromCpt 触发事件的组件
    * @param args 事件参数
    */
-  private async eventHandler(eventConfig: EventConfig | DeprecatedEventConfig, fromCpt: any, args: any[]) {
+  private async eventHandler(config: EventConfig | number, fromCpt: Node | DataSource | undefined, args: any[]) {
+    const eventConfig = typeof config === 'number' ? (fromCpt as Node).events[config] : config;
     if (has(eventConfig, 'actions')) {
       // EventConfig类型
       const { actions } = eventConfig as EventConfig;
-      for (const actionItem of actions) {
-        if (actionItem.actionType === ActionType.COMP) {
-          // 组件动作
-          await this.compActionHandler(actionItem as CompItemConfig, fromCpt, args);
-        } else if (actionItem.actionType === ActionType.CODE) {
-          // 执行代码块
-          await this.codeActionHandler(actionItem as CodeItemConfig, args);
-        } else if (actionItem.actionType === ActionType.DATA_SOURCE) {
-          await this.dataSourceActionHandler(actionItem as DataSourceItemConfig, args);
+      for (let i = 0; i < actions.length; i++) {
+        if (typeof config === 'number') {
+          // 事件响应中可能会有修改数据源数据的，会更新dsl，所以这里需要重新获取
+          const actionItem = ((fromCpt as Node).events[config] as EventConfig).actions[i];
+          this.actionHandler(actionItem, fromCpt as Node, args);
+        } else {
+          this.actionHandler(actions[i], fromCpt as DataSource, args);
         }
       }
     } else {
       // 兼容DeprecatedEventConfig类型 组件动作
-      await this.compActionHandler(eventConfig as DeprecatedEventConfig, fromCpt, args);
+      await this.compActionHandler(eventConfig as unknown as CompItemConfig, fromCpt as Node, args);
     }
   }
 
@@ -388,31 +412,6 @@ class App extends EventEmitter implements AppCore {
     } else {
       this.eventQueueMap[event.eventConfig.to] = [event];
     }
-  }
-
-  private getTransform(value: Record<string, string>) {
-    if (!value) return [];
-
-    const transform = Object.entries(value).map(([transformKey, transformValue]) => {
-      if (!transformValue.trim()) return '';
-      if (transformKey === 'rotate' && isNumber(transformValue)) {
-        transformValue = `${transformValue}deg`;
-      }
-
-      return this.jsEngine !== 'hippy' ? `${transformKey}(${transformValue})` : { [transformKey]: transformValue };
-    });
-
-    if (this.jsEngine === 'hippy') {
-      return transform;
-    }
-    const values = transform.join(' ');
-    return !values.trim() ? 'none' : values;
-  }
-
-  private calcFontsize() {
-    const { width } = document.documentElement.getBoundingClientRect();
-    const fontSize = width / (this.designWidth / 100);
-    document.documentElement.style.fontSize = `${fontSize}px`;
   }
 }
 

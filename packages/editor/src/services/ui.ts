@@ -47,12 +47,20 @@ const state = reactive<UiState>({
   showRule: true,
   propsPanelSize: 'small',
   showAddPageButton: true,
+  showPageListButton: true,
   hideSlideBar: false,
+  sideBarItems: [],
   navMenuRect: {
     left: 0,
     top: 0,
     width: 0,
     height: 0,
+  },
+  frameworkRect: {
+    width: 0,
+    height: 0,
+    left: 0,
+    top: 0,
   },
 });
 

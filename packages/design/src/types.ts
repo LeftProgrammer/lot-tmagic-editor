@@ -29,6 +29,7 @@ export interface ButtonProps {
   size?: FieldSize;
   link?: boolean;
   text?: boolean;
+  circle?: boolean;
   icon?: any;
 }
 
@@ -61,8 +62,8 @@ export interface CheckboxProps {
   modelValue?: string | number | boolean;
   value?: string | number | boolean;
   label?: any;
-  trueLabel?: string | number | boolean;
-  falseLabel?: string | number | boolean;
+  trueValue?: string | number;
+  falseValue?: string | number;
   disabled?: boolean;
   size?: FieldSize;
 }
@@ -234,10 +235,13 @@ export interface PopoverProps {
 }
 
 export interface RadioProps {
+  modelValue?: string | number | boolean;
+  value?: string | number | boolean;
   label?: string | number | boolean;
 }
 
 export interface RadioButtonProps {
+  value?: string | number | boolean;
   label?: string | number | boolean;
   disabled?: boolean;
   name?: string;
@@ -375,6 +379,10 @@ export interface CascaderOption {
   label: string;
   /** 指定选项的子选项为选项对象的某个属性值 */
   children?: CascaderOption[];
+}
+
+export interface IconProps {
+  size?: string;
 }
 
 export interface TMagicMessage {
@@ -523,8 +531,8 @@ export interface Components {
   };
 
   icon: {
-    component: DefineComponent<{}, {}, any> | string;
-    props: () => {};
+    component: DefineComponent<IconProps, {}, any> | string;
+    props: (props: IconProps) => IconProps;
   };
 
   input: {

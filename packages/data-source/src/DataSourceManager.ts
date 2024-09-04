@@ -18,22 +18,20 @@
 
 import EventEmitter from 'events';
 
-import { cloneDeep, template } from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 
-import type { AppCore, DataSourceSchema, Id, MNode } from '@tmagic/schema';
-import {
-  compiledNode,
-  DATA_SOURCE_FIELDS_SELECT_VALUE_PREFIX,
-  DSL_NODE_KEY_COPY_PREFIX,
-  getValueByKeyPath,
-} from '@tmagic/utils';
+import type { AppCore, DataSourceSchema, DisplayCond, Id, MNode } from '@tmagic/schema';
+import { compiledNode } from '@tmagic/utils';
 
+import { SimpleObservedData } from './observed-data/SimpleObservedData';
 import { DataSource, HttpDataSource } from './data-sources';
-import type { ChangeEvent, DataSourceManagerData, DataSourceManagerOptions } from './types';
-import { compliedConditions, createIteratorContentData } from './utils';
+import type { ChangeEvent, DataSourceManagerData, DataSourceManagerOptions, ObservedDataClass } from './types';
+import { compiledNodeField, compliedConditions, compliedIteratorItemConditions, compliedIteratorItems } from './utils';
 
 class DataSourceManager extends EventEmitter {
   private static dataSourceClassMap = new Map<string, typeof DataSource>();
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  private static ObservedDataClass: ObservedDataClass = SimpleObservedData;
 
   public static register<T extends typeof DataSource = typeof DataSource>(type: string, dataSource: T) {
     DataSourceManager.dataSourceClassMap.set(type, dataSource);
@@ -48,6 +46,10 @@ class DataSourceManager extends EventEmitter {
 
   public static getDataSourceClass(type: string) {
     return DataSourceManager.dataSourceClassMap.get(type);
+  }
+
+  public static registerObservedData(ObservedDataClass: ObservedDataClass) {
+    DataSourceManager.ObservedDataClass = ObservedDataClass;
   }
 
   public app: AppCore;
@@ -71,7 +73,33 @@ class DataSourceManager extends EventEmitter {
       this.addDataSource(config);
     });
 
-    Promise.all(Array.from(this.dataSourceMap).map(async ([, ds]) => this.init(ds)));
+    const dataSourceList = Array.from(this.dataSourceMap);
+
+    if (typeof Promise.allSettled === 'function') {
+      Promise.allSettled<Record<string, any>>(dataSourceList.map(([, ds]) => this.init(ds))).then((values) => {
+        const data: DataSourceManagerData = {};
+        const errors: Record<string, Error> = {};
+
+        values.forEach((value, index) => {
+          const dsId = dataSourceList[index][0];
+          if (value.status === 'fulfilled') {
+            data[dsId] = this.data[dsId];
+          } else if (value.status === 'rejected') {
+            errors[dsId] = value.reason;
+          }
+        });
+
+        this.emit('init', data, errors);
+      });
+    } else {
+      Promise.all<Record<string, any>>(dataSourceList.map(([, ds]) => this.init(ds)))
+        .then(() => {
+          this.emit('init', this.data);
+        })
+        .catch(() => {
+          this.emit('init', this.data);
+        });
+    }
   }
 
   public async init(ds: DataSource) {
@@ -83,28 +111,21 @@ class DataSourceManager extends EventEmitter {
       return;
     }
 
-    const beforeInit: ((...args: any[]) => any)[] = [];
-    const afterInit: ((...args: any[]) => any)[] = [];
-
-    ds.methods.forEach((method) => {
+    for (const method of ds.methods) {
       if (typeof method.content !== 'function') return;
       if (method.timing === 'beforeInit') {
-        beforeInit.push(method.content);
+        method.content({ params: {}, dataSource: ds, app: this.app });
       }
-      if (method.timing === 'afterInit') {
-        afterInit.push(method.content);
-      }
-    });
-
-    for (const method of beforeInit) {
-      await method({ params: {}, dataSource: ds, app: this.app });
     }
 
     await ds.init();
 
-    for (const method of afterInit) {
-      await method({ params: {}, dataSource: ds, app: this.app });
-    }
+    ds.methods.forEach((method) => {
+      if (typeof method.content !== 'function') return;
+      if (method.timing === 'afterInit') {
+        method.content({ params: {}, dataSource: ds, app: this.app });
+      }
+    });
   }
 
   public get(id: string) {
@@ -123,6 +144,7 @@ class DataSourceManager extends EventEmitter {
       request: this.app.request,
       useMock: this.useMock,
       initialData: this.data[config.id],
+      ObservedDataClass: DataSourceManager.ObservedDataClass,
     });
 
     this.dataSourceMap.set(config.id, ds);
@@ -174,40 +196,7 @@ class DataSourceManager extends EventEmitter {
     if (node.visible === false) return newNode;
 
     return compiledNode(
-      (value: any) => {
-        // 使用data-source-input等表单控件配置的字符串模板，如：`xxx${id.field}xxx`
-        if (typeof value === 'string') {
-          return template(value)(this.data);
-        }
-
-        // 使用data-source-select等表单控件配置的数据源，如：{ isBindDataSource: true, dataSourceId: 'xxx'}
-        if (value?.isBindDataSource && value.dataSourceId) {
-          return this.data[value.dataSourceId];
-        }
-
-        // 指定数据源的字符串模板，如：{ isBindDataSourceField: true, dataSourceId: 'id', template: `xxx${field}xxx`}
-        if (value?.isBindDataSourceField && value.dataSourceId && typeof value.template === 'string') {
-          return template(value.template)(this.data[value.dataSourceId]);
-        }
-
-        // 使用data-source-field-select等表单控件的数据源字段，如：[`${DATA_SOURCE_FIELDS_SELECT_VALUE_PREFIX}${id}`, 'field']
-        if (Array.isArray(value) && typeof value[0] === 'string') {
-          const [prefixId, ...fields] = value;
-          const prefixIndex = prefixId.indexOf(DATA_SOURCE_FIELDS_SELECT_VALUE_PREFIX);
-
-          if (prefixIndex > -1) {
-            const dsId = prefixId.substring(prefixIndex + DATA_SOURCE_FIELDS_SELECT_VALUE_PREFIX.length);
-
-            const data = this.data[dsId];
-
-            if (!data) return value;
-
-            return getValueByKeyPath(fields.join('.'), data);
-          }
-        }
-
-        return value;
-      },
+      (value: any) => compiledNodeField(value, this.data),
       newNode,
       this.app.dsl?.dataSourceDeps || {},
       sourceId,
@@ -218,36 +207,15 @@ class DataSourceManager extends EventEmitter {
     return compliedConditions(node, this.data);
   }
 
+  public compliedIteratorItemConds(itemData: any, displayConds: DisplayCond[] = []) {
+    return compliedIteratorItemConditions(displayConds, itemData);
+  }
+
   public compliedIteratorItems(itemData: any, items: MNode[], dataSourceField: string[] = []) {
-    return items.map((item) => {
-      const keys: string[] = [];
-      const [dsId, ...fields] = dataSourceField;
-
-      Object.entries(item).forEach(([key, value]) => {
-        if (
-          typeof value === 'string' &&
-          !key.startsWith(DSL_NODE_KEY_COPY_PREFIX) &&
-          value.includes(`${dsId}`) &&
-          /\$\{([\s\S]+?)\}/.test(value)
-        ) {
-          keys.push(key);
-        }
-      });
-
-      return compiledNode(
-        (value: string) => template(value)(createIteratorContentData(itemData, dsId, fields)),
-        item,
-        {
-          [dsId]: {
-            [item.id]: {
-              name: '',
-              keys,
-            },
-          },
-        },
-        dsId,
-      );
-    });
+    const [dsId, ...keys] = dataSourceField;
+    const ds = this.get(dsId);
+    if (!ds) return items;
+    return compliedIteratorItems(itemData, items, dsId, keys, this.data, this.app.platform === 'editor');
   }
 
   public destroy() {
@@ -257,6 +225,14 @@ class DataSourceManager extends EventEmitter {
       ds.destroy();
     });
     this.dataSourceMap.clear();
+  }
+
+  public onDataChange(id: string, path: string, callback: (newVal: any) => void) {
+    return this.get(id)?.onDataChange(path, callback);
+  }
+
+  public offDataChange(id: string, path: string, callback: (newVal: any) => void) {
+    return this.get(id)?.offDataChange(path, callback);
   }
 }
 

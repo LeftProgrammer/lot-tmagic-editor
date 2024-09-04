@@ -7,16 +7,16 @@ import {
   createDataSourceCondTarget,
   createDataSourceMethodTarget,
   createDataSourceTarget,
-  createRelatedCompTarget,
   DepTargetType,
   Target,
 } from '@tmagic/dep';
 import type { CodeBlockContent, DataSourceSchema, Id, MApp, MNode, MPage, MPageFragment } from '@tmagic/schema';
-import { getNodes } from '@tmagic/utils';
+import { isPage } from '@tmagic/utils';
 
 import PropsPanel from './layouts/PropsPanel.vue';
 import { EditorProps } from './editorProps';
 import { Services } from './type';
+import { traverseNode } from './utils';
 
 export declare type LooseRequired<T> = {
   [P in string & keyof T]: T[P];
@@ -205,38 +205,6 @@ export const initServiceEvents = (
     }
   };
 
-  const updateNodeWhenDataSourceChange = (nodes: MNode[]) => {
-    const root = editorService.get('root');
-    const stage = editorService.get('stage');
-
-    if (!root || !stage) return;
-
-    const app = getApp();
-
-    if (!app) return;
-
-    if (app.dsl) {
-      app.dsl.dataSourceDeps = root.dataSourceDeps;
-      app.dsl.dataSourceCondDeps = root.dataSourceCondDeps;
-      app.dsl.dataSources = root.dataSources;
-    }
-
-    updateDataSourceSchema();
-
-    nodes.forEach((node) => {
-      const deps = Object.values(root.dataSourceDeps || {});
-      deps.forEach((dep) => {
-        if (dep[node.id]) {
-          stage.update({
-            config: cloneDeep(node),
-            parentId: editorService.getParentById(node.id)?.id,
-            root: cloneDeep(root),
-          });
-        }
-      });
-    });
-  };
-
   const targetAddHandler = (target: Target) => {
     const root = editorService.get('root');
     if (!root) return;
@@ -268,17 +236,54 @@ export const initServiceEvents = (
     }
   };
 
-  const depUpdateHandler = (node: MNode) => {
-    updateNodeWhenDataSourceChange([node]);
-  };
+  const collectedHandler = (nodes: MNode[], deep: boolean) => {
+    const root = editorService.get('root');
+    const stage = editorService.get('stage');
 
-  const collectedHandler = (nodes: MNode[]) => {
-    updateNodeWhenDataSourceChange(nodes);
+    if (!root || !stage) return;
+
+    const app = getApp();
+
+    if (!app) return;
+
+    if (app.dsl) {
+      app.dsl.dataSourceDeps = root.dataSourceDeps;
+      app.dsl.dataSourceCondDeps = root.dataSourceCondDeps;
+      app.dsl.dataSources = root.dataSources;
+    }
+
+    updateDataSourceSchema();
+
+    const allNodes: MNode[] = [];
+
+    if (deep) {
+      nodes.forEach((node) => {
+        traverseNode<MNode>(node, (node) => {
+          if (!allNodes.includes(node)) {
+            allNodes.push(node);
+          }
+        });
+      });
+    } else {
+      allNodes.push(...nodes);
+    }
+
+    const deps = Object.values(root.dataSourceDeps || {});
+    deps.forEach((dep) => {
+      Object.keys(dep).forEach((id) => {
+        const node = allNodes.find((node) => node.id === id);
+        node &&
+          stage.update({
+            config: cloneDeep(node),
+            parentId: editorService.getParentById(node.id)?.id,
+            root: cloneDeep(root),
+          });
+      });
+    });
   };
 
   depService.on('add-target', targetAddHandler);
   depService.on('remove-target', targetRemoveHandler);
-  depService.on('dep-update', depUpdateHandler);
   depService.on('collected', collectedHandler);
 
   const initDataSourceDepTarget = (ds: DataSourceSchema) => {
@@ -307,7 +312,9 @@ export const initServiceEvents = (
     });
 
     if (Array.isArray(value.items)) {
-      depService.collect(value.items, true);
+      value.items.forEach((page) => {
+        depService.collectIdle([page], { pageId: page.id }, true);
+      });
     } else {
       depService.clear();
       delete value.dataSourceDeps;
@@ -334,14 +341,28 @@ export const initServiceEvents = (
     }
   };
 
+  const collectIdle = (nodes: MNode[], deep: boolean) => {
+    nodes.forEach((node) => {
+      let pageId: Id | undefined;
+
+      if (isPage(node)) {
+        pageId = node.id;
+      } else {
+        const info = editorService.getNodeInfo(node.id);
+        pageId = info.page?.id;
+      }
+      depService.collectIdle([node], { pageId }, deep);
+    });
+  };
+
   // 新增节点，收集依赖
   const nodeAddHandler = (nodes: MNode[]) => {
-    depService.collect(nodes);
+    collectIdle(nodes, true);
   };
 
   // 节点更新，收集依赖
   const nodeUpdateHandler = (nodes: MNode[]) => {
-    depService.collect(nodes);
+    collectIdle(nodes, true);
   };
 
   // 节点删除，清除对齐的依赖收集
@@ -351,7 +372,7 @@ export const initServiceEvents = (
 
   // 由于历史记录变化是更新整个page，所以历史记录变化时，需要重新收集依赖
   const historyChangeHandler = (page: MPage | MPageFragment) => {
-    depService.collect([page], true);
+    depService.collectIdle([page], { pageId: page.id }, true);
   };
 
   editorService.on('history-change', historyChangeHandler);
@@ -386,13 +407,9 @@ export const initServiceEvents = (
     removeDataSourceTarget(config.id);
     initDataSourceDepTarget(config);
 
-    depService.collect(root?.items || [], true);
-
-    const targets = depService.getTargets(DepTargetType.DATA_SOURCE);
-
-    const nodes = getNodes(Object.keys(targets[config.id].deps), root?.items);
-
-    updateNodeWhenDataSourceChange(nodes);
+    (root?.items || []).forEach((page) => {
+      depService.collectIdle([page], { pageId: page.id }, true);
+    });
   };
 
   const removeDataSourceTarget = (id: string) => {
@@ -410,15 +427,9 @@ export const initServiceEvents = (
   dataSourceService.on('update', dataSourceUpdateHandler);
   dataSourceService.on('remove', dataSourceRemoveHandler);
 
-  // 初始化复制组件相关的依赖收集器
-  if (props.collectorOptions && !depService.hasTarget(DepTargetType.RELATED_COMP_WHEN_COPY)) {
-    depService.addTarget(createRelatedCompTarget(props.collectorOptions));
-  }
-
   onBeforeUnmount(() => {
     depService.off('add-target', targetAddHandler);
     depService.off('remove-target', targetRemoveHandler);
-    depService.off('dep-update', depUpdateHandler);
     depService.off('collected', collectedHandler);
 
     editorService.off('history-change', historyChangeHandler);

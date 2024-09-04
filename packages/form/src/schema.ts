@@ -122,6 +122,7 @@ export interface Rule {
   type?: string;
   /** 是否必填 */
   required?: boolean;
+  trigger?: string;
   /** 自定义验证器 */
   validator?: (
     options: {
@@ -169,6 +170,7 @@ export type FilterFunction<T = boolean> = (
     formValue: Record<any, any>;
     prop: string;
     config: any;
+    index?: number;
   },
 ) => T;
 
@@ -294,6 +296,9 @@ export interface DaterangeConfig extends FormItem {
   type: 'daterange';
   defaultTime?: Date[];
   names?: string[];
+  valueFormat?: string;
+  dateFormat?: string;
+  timeFormat?: string;
 }
 
 /**
@@ -401,8 +406,8 @@ export interface TimeConfig extends FormItem, Input {
  */
 export interface CheckboxConfig extends FormItem {
   type: 'checkbox';
-  activeValue?: boolean | number | string;
-  inactiveValue?: boolean | number | string;
+  activeValue?: number | string;
+  inactiveValue?: number | string;
 }
 
 /**
@@ -432,18 +437,18 @@ export interface ColorPickConfig extends FormItem {
   type: 'colorPicker';
 }
 
+export interface CheckboxGroupOption {
+  value: any;
+  text: string;
+  disabled?: boolean;
+}
+
 /**
  * 多选框组
  */
 export interface CheckboxGroupConfig extends FormItem {
   type: 'checkbox-group';
-  options:
-    | {
-        value: any;
-        text: string;
-        disabled?: boolean;
-      }[]
-    | Function;
+  options: CheckboxGroupOption[] | FilterFunction<CheckboxGroupOption[]>;
 }
 
 /**
@@ -535,15 +540,18 @@ export interface CascaderConfig extends FormItem, Input {
   /** 是否多选，默认 false */
   multiple?: boolean;
   /** 是否严格的遵守父子节点不互相关联，默认 false */
-  checkStrictly?: boolean;
+  checkStrictly?: boolean | FilterFunction<boolean>;
   /** 弹出内容的自定义类名 */
   popperClass?: string;
+  /** 合并成字符串时的分隔符 */
+  valueSeparator?: string | FilterFunction<string>;
   options?:
     | ((
         mForm: FormState | undefined,
         data: {
           model: Record<any, any>;
-          formValues: Record<any, any>;
+          prop: string;
+          formValue: Record<any, any>;
         },
       ) => CascaderOption[])
     | CascaderOption[];

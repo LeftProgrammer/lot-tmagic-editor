@@ -1,5 +1,4 @@
 import type { EventOption } from '@tmagic/core';
-import type { CustomTargetOptions } from '@tmagic/dep';
 import type { FormConfig, FormState } from '@tmagic/form';
 import type { DataSourceSchema, Id, MApp, MNode } from '@tmagic/schema';
 import StageCore, {
@@ -18,6 +17,7 @@ import type {
   MenuBarData,
   MenuButton,
   MenuComponent,
+  PageBarSortOptions,
   SideBarData,
   StageRect,
 } from './type';
@@ -70,8 +70,6 @@ export interface EditorProps {
   codeOptions?: { [key: string]: any };
   /** 禁用鼠标左键按下时就开始拖拽，需要先选中再可以拖拽 */
   disabledDragStart?: boolean;
-  /** 自定义依赖收集器，复制组件时会将关联依赖一并复制 */
-  collectorOptions?: CustomTargetOptions;
   /** 标尺配置 */
   guidesOptions?: Partial<GuidesOptions>;
   /** 禁止多选 */
@@ -80,6 +78,8 @@ export interface EditorProps {
   disabledPageFragment?: boolean;
   /** 禁用双击在浮层中单独编辑选中组件 */
   disabledStageOverlay?: boolean;
+  /** 禁用属性配置面板右下角显示源码的按钮 */
+  disabledShowSrc?: boolean;
   /** 中间工作区域中画布渲染的内容 */
   render?: (stage: StageCore) => HTMLDivElement | Promise<HTMLDivElement>;
   /** 选中时会在画布上复制出一个大小相同的dom，实际拖拽的是这个dom，此方法用于干预这个dom的生成方式 */
@@ -91,6 +91,8 @@ export interface EditorProps {
   /** 用于自定义组件树与画布的右键菜单 */
   customContentMenu?: (menus: (MenuButton | MenuComponent)[], type: string) => (MenuButton | MenuComponent)[];
   extendFormState?: (state: FormState) => Record<string, any> | Promise<Record<string, any>>;
+  /** 页面顺序拖拽配置参数 */
+  pageBarSortOptions?: PageBarSortOptions;
 }
 
 export const defaultEditorProps = {
@@ -101,6 +103,7 @@ export const defaultEditorProps = {
   containerHighlightClassName: CONTAINER_HIGHLIGHT_CLASS_NAME,
   containerHighlightDuration: 800,
   containerHighlightType: ContainerHighlightType.DEFAULT,
+  disabledShowSrc: false,
   componentGroupList: () => [],
   datasourceList: () => [],
   menu: () => ({ left: [], right: [] }),

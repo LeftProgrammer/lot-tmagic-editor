@@ -21,13 +21,15 @@ import Code from './fields/Code.vue';
 import CodeLink from './fields/CodeLink.vue';
 import CodeSelect from './fields/CodeSelect.vue';
 import CodeSelectCol from './fields/CodeSelectCol.vue';
+import CondOpSelect from './fields/CondOpSelect.vue';
 import DataSourceFields from './fields/DataSourceFields.vue';
-import DataSourceFieldSelect from './fields/DataSourceFieldSelect.vue';
+import DataSourceFieldSelect from './fields/DataSourceFieldSelect/Index.vue';
 import DataSourceInput from './fields/DataSourceInput.vue';
 import DataSourceMethods from './fields/DataSourceMethods.vue';
 import DataSourceMethodSelect from './fields/DataSourceMethodSelect.vue';
 import DataSourceMocks from './fields/DataSourceMocks.vue';
 import DataSourceSelect from './fields/DataSourceSelect.vue';
+import DisplayConds from './fields/DisplayConds.vue';
 import EventSelect from './fields/EventSelect.vue';
 import KeyValue from './fields/KeyValue.vue';
 import PageFragmentSelect from './fields/PageFragmentSelect.vue';
@@ -68,7 +70,7 @@ export { default as DataSourceMethods } from './fields/DataSourceMethods.vue';
 export { default as DataSourceInput } from './fields/DataSourceInput.vue';
 export { default as DataSourceSelect } from './fields/DataSourceSelect.vue';
 export { default as DataSourceMethodSelect } from './fields/DataSourceMethodSelect.vue';
-export { default as DataSourceFieldSelect } from './fields/DataSourceFieldSelect.vue';
+export { default as DataSourceFieldSelect } from './fields/DataSourceFieldSelect/Index.vue';
 export { default as EventSelect } from './fields/EventSelect.vue';
 export { default as KeyValue } from './fields/KeyValue.vue';
 export { default as CodeBlockList } from './layouts/sidebar/code-block/CodeBlockList.vue';
@@ -82,7 +84,10 @@ export { default as LayoutContainer } from './components/SplitView.vue';
 export { default as SplitView } from './components/SplitView.vue';
 export { default as Resizer } from './components/Resizer.vue';
 export { default as CodeBlockEditor } from './components/CodeBlockEditor.vue';
+export { default as FloatingBox } from './components/FloatingBox.vue';
 export { default as PageFragmentSelect } from './fields/PageFragmentSelect.vue';
+export { default as DisplayConds } from './fields/DisplayConds.vue';
+export { default as CondOpSelect } from './fields/CondOpSelect.vue';
 
 const defaultInstallOpt: InstallOptions = {
   // eslint-disable-next-line no-eval
@@ -96,11 +101,11 @@ export default {
     // eslint-disable-next-line no-param-reassign
     app.config.globalProperties.$TMAGIC_EDITOR = option;
     setConfig(option);
-    app.component(Editor.name, Editor);
+    app.component(`${Editor.name || 'MEditor'}`, Editor);
+    app.component('magic-code-editor', CodeEditor);
     app.component('m-fields-ui-select', uiSelect);
     app.component('m-fields-code-link', CodeLink);
     app.component('m-fields-vs-code', Code);
-    app.component('magic-code-editor', CodeEditor);
     app.component('m-fields-code-select', CodeSelect);
     app.component('m-fields-code-select-col', CodeSelectCol);
     app.component('m-fields-event-select', EventSelect);
@@ -113,5 +118,7 @@ export default {
     app.component('m-fields-data-source-method-select', DataSourceMethodSelect);
     app.component('m-fields-data-source-field-select', DataSourceFieldSelect);
     app.component('m-fields-page-fragment-select', PageFragmentSelect);
+    app.component('m-fields-display-conds', DisplayConds);
+    app.component('m-fields-cond-op-select', CondOpSelect);
   },
 };
