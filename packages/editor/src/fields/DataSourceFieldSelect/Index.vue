@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, ref, resolveComponent, watch } from 'vue';
+import { computed, inject, ref, resolveComponent, watch, watchEffect } from 'vue';
 import { Coin } from '@element-plus/icons-vue';
 
 import { TMagicButton, tMagicMessage, TMagicTooltip } from '@tmagic/design';
@@ -62,7 +62,6 @@ const emit = defineEmits(['change']);
 const props = withDefaults(defineProps<FieldProps<DataSourceFieldSelectConfig>>(), {
   disabled: false,
 });
-
 const showDataSourceFieldSelect = ref(false);
 
 watch(
@@ -100,7 +99,7 @@ const type = computed((): string => {
   return type?.replace(/([A-Z])/g, '-$1').toLowerCase() || (props.config.items ? '' : 'text');
 });
 
-const tagName = computed(() => {
+const tagName: any = computed(() => {
   const component = resolveComponent(`m-${props.config.items ? 'form' : 'fields'}-${type.value}`);
   if (typeof component !== 'string') return component;
   return 'm-fields-text';
@@ -166,4 +165,19 @@ const onChangeHandler = (value: string[]) => {
     emit('change', [dsId]);
   }
 };
+
+watchEffect(() => {
+  if (tagName.value && tagName.value?.name === 'MFormSelect') {
+    console.error("tagName.value === 'MFormSelect'");
+    // 给 MFormSelect 设置 options
+    if (props.config.fieldConfig && !props.config.fieldConfig.options?.length) {
+      const eventList = localStorage.getItem('eventList');
+      if (eventList) {
+        props.config.fieldConfig.options = JSON.parse(eventList);
+      } else {
+        props.config.fieldConfig.options = [];
+      }
+    }
+  }
+});
 </script>

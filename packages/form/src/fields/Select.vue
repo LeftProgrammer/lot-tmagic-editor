@@ -247,6 +247,7 @@ const getInitLocalOption = async () => {
 
   const value = props.model[props.name];
   const { config } = props;
+
   localOptions.value = await getOptions();
 
   remote.value = false;

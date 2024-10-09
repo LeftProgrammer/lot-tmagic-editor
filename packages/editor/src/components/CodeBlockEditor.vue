@@ -135,6 +135,11 @@ const defaultParamColConfig: ColumnConfig = {
           label: '组件',
           value: 'ui-select',
         },
+        {
+          text: '自定义选择器',
+          label: '自定义选择器',
+          value: 'select',
+        },
       ],
     },
   ],

@@ -48,6 +48,7 @@ const codeParamsConfig = computed(() =>
   getFormConfig(
     props.paramsConfig.map(({ name, text, extra, ...config }) => ({
       type: 'data-source-field-select',
+      // type: 'data-source-select',
       name,
       text,
       extra,
