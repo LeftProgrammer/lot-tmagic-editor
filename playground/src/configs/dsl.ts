@@ -16,12 +16,12 @@
  * limitations under the License.
  */
 
-import { ActionType, type MApp, NodeType } from '@tmagic/schema';
+import { type MApp } from '@tmagic/schema';
 
 const dsl: MApp = {
-  id: '1',
+  id: '75f0extui9d7yksklx27hff8xg',
   name: 'test',
-  type: NodeType.ROOT,
+  type: 'app',
   codeBlocks: {
     code_5336: {
       name: 'getData',
@@ -51,7 +51,7 @@ const dsl: MApp = {
   },
   items: [
     {
-      type: NodeType.PAGE,
+      type: 'page',
       id: 'page_299',
       name: 'index',
       title: '',
@@ -74,23 +74,23 @@ const dsl: MApp = {
       },
       events: [
         {
-          name: 'magic:common:events:click', // 事件名
+          name: 'magic:common:events:click',
           actions: [
             {
-              actionType: ActionType.CODE, // 联动动作类型
-              codeId: 'code_5336', // 代码块id
+              actionType: 'code',
+              codeId: 'code_5336',
               params: {
-                age: 12, // 参数
+                age: 12,
               },
             },
           ],
         },
         {
-          name: 'magic:common:events:click', // 事件名
+          name: 'magic:common:events:click',
           actions: [
             {
-              actionType: ActionType.CODE, // 联动动作类型
-              codeId: 'code_5316', // 代码块id
+              actionType: 'code',
+              codeId: 'code_5316',
               params: {},
             },
           ],
@@ -131,21 +131,32 @@ const dsl: MApp = {
             color: '',
             fontSize: '20',
             fontWeight: '',
+            overflow: '',
+            borderWidth: '0',
+            borderColor: '',
+            borderStyle: 'none',
+            transform: {
+              rotate: '',
+              scale: '',
+            },
           },
           name: '文本',
-          text: 'Tmagic editor 营销活动编辑器',
+          text: 'Tmagic editor 编辑器',
           multiple: true,
           events: [],
+          created: '',
+          mounted: '',
+          displayConds: [],
         },
         {
           type: 'qrcode',
           id: 'qrcode_4738',
           style: {
             position: 'absolute',
-            left: '91.92',
+            left: 95,
             width: '176',
             height: '176',
-            top: '565.50',
+            top: 288,
             right: '',
             bottom: '',
             backgroundImage: '',
@@ -166,10 +177,10 @@ const dsl: MApp = {
           id: 'img_3877',
           style: {
             position: 'absolute',
-            left: '95.91',
+            left: 86,
             width: '176',
             height: '176',
-            top: '325.71',
+            top: 508,
             right: '',
             bottom: '',
             backgroundImage: '',
@@ -212,6 +223,7 @@ const dsl: MApp = {
               rotate: '',
               scale: '',
             },
+            overflow: '',
           },
           name: '按钮',
           text: '${ds_b64c92b5.text}',
@@ -221,7 +233,7 @@ const dsl: MApp = {
               name: 'magic:common:events:click',
               actions: [
                 {
-                  actionType: ActionType.COMP,
+                  actionType: 'comp',
                   to: 'overlay_2159',
                   method: 'openOverlay',
                 },
@@ -229,6 +241,8 @@ const dsl: MApp = {
             },
           ],
           created: [],
+          mounted: '',
+          displayConds: [],
         },
         {
           type: 'overlay',
@@ -356,6 +370,128 @@ const dsl: MApp = {
         },
       ],
     },
+    {
+      id: 'page_ff0b56c7',
+      items: [
+        {
+          id: 'button_c22b82cf',
+          text: '按钮1',
+          multiple: true,
+          style: {
+            width: '270',
+            height: '37.5',
+            border: 0,
+            backgroundColor: '#fb6f00',
+            position: 'absolute',
+            top: 156,
+            left: 63,
+            right: '',
+            bottom: '',
+            overflow: '',
+            borderWidth: '0',
+            borderColor: '',
+            borderStyle: 'none',
+            backgroundImage: '',
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: '100% 100%',
+            color: '',
+            fontSize: '',
+            fontWeight: '',
+            transform: {
+              rotate: '',
+              scale: '',
+            },
+          },
+          type: 'button',
+          name: '按钮',
+          events: '',
+          created: '',
+          mounted: '',
+          displayConds: [],
+        },
+        {
+          id: 'button_019b0292',
+          text: '按钮2',
+          multiple: true,
+          style: {
+            width: '270',
+            height: '37.5',
+            border: 0,
+            backgroundColor: '#fb6f00',
+            position: 'absolute',
+            top: 270,
+            left: 63,
+            right: '',
+            bottom: '',
+            overflow: '',
+            borderWidth: '0',
+            borderColor: '',
+            borderStyle: 'none',
+            backgroundImage: '',
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: '100% 100%',
+            color: '',
+            fontSize: '',
+            fontWeight: '',
+            transform: {
+              rotate: '',
+              scale: '',
+            },
+          },
+          type: 'button',
+          name: '按钮',
+          events: '',
+          created: '',
+          mounted: '',
+          displayConds: [],
+        },
+        {
+          id: 'button_505a25d6',
+          text: '按钮3',
+          multiple: true,
+          style: {
+            width: '270',
+            height: '37.5',
+            border: 0,
+            backgroundColor: '#fb6f00',
+            position: 'absolute',
+            top: 370,
+            left: 63,
+            right: '',
+            bottom: '',
+            overflow: '',
+            borderWidth: '0',
+            borderColor: '',
+            borderStyle: 'none',
+            backgroundImage: '',
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: '100% 100%',
+            color: '',
+            fontSize: '',
+            fontWeight: '',
+            transform: {
+              rotate: '',
+              scale: '',
+            },
+          },
+          type: 'button',
+          name: '按钮',
+          events: '',
+          created: '',
+          mounted: '',
+          displayConds: [],
+        },
+      ],
+      style: {
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        top: 0,
+        left: 0,
+      },
+      type: 'page',
+      name: 'page_1',
+    },
   ],
   dataSources: [
     {
@@ -422,7 +558,7 @@ const dsl: MApp = {
         },
       ],
       methods: [],
-      events: [],
+      events: '',
       mocks: [],
       beforeRequest: '',
       afterResponse: '',
@@ -450,14 +586,13 @@ const dsl: MApp = {
           timing: '',
           params: [],
           content: ({ dataSource }) => {
-            // place your code here
             setTimeout(() => {
               dataSource.setData('red', 'color');
-            }, 1000);
+            }, 1e3);
           },
         },
       ],
-      events: [],
+      events: '',
       mocks: [],
       beforeRequest: '',
       afterResponse: '',
@@ -468,9 +603,16 @@ const dsl: MApp = {
       button_430: {
         name: '按钮',
         keys: ['text'],
+        data: {
+          pageId: 'page_299',
+        },
       },
     },
+    ds_d1a460c5: {},
+  },
+  dataSourceCondDeps: {
+    ds_b64c92b5: {},
+    ds_d1a460c5: {},
   },
 };
-
 export default dsl;

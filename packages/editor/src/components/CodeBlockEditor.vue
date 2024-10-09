@@ -181,6 +181,21 @@ const functionConfig = computed<FormConfig>(() => [
         label: '参数名',
         name: 'name',
       },
+      // {
+      //   type: 'row',
+      //   label: '事件类型',
+      //   items: [
+      //     {
+      //       text: '',
+      //       labelWidth: '70px',
+      //       type: 'select',
+      //       name: 'type',
+      //       options: [
+
+      //       ],
+      //     },
+      //   ],
+      // },
       {
         type: 'text',
         label: '描述',

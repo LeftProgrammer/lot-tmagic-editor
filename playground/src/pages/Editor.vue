@@ -27,6 +27,7 @@
     </TMagicEditor>
 
     <TMagicDialog v-model="previewVisible" destroy-on-close class="pre-viewer" title="预览" :width="stageRect?.width">
+      {{ previewUrl }}
       <iframe
         v-if="previewVisible"
         ref="iframe"
@@ -40,9 +41,10 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, markRaw, nextTick, onBeforeUnmount, Ref, ref, toRaw } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, markRaw, nextTick, onBeforeUnmount, onMounted, Ref, ref, toRaw } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { Coin, Connection, CopyDocument, Document, DocumentCopy } from '@element-plus/icons-vue';
+import axios from 'axios';
 import { cloneDeep } from 'lodash-es';
 import serialize from 'serialize-javascript';
 
@@ -74,6 +76,8 @@ const { VITE_RUNTIME_PATH, VITE_ENTRY_PATH } = import.meta.env;
 const datasourceList: DatasourceTypeOption[] = [];
 const runtimeUrl = `${VITE_RUNTIME_PATH}/playground/index.html`;
 const router = useRouter();
+const route = useRoute();
+const fileName = route.query?.filename;
 const editor = ref<InstanceType<typeof TMagicEditor>>();
 const deviceGroup = ref<InstanceType<typeof DeviceGroup>>();
 const iframe = ref<HTMLIFrameElement>();
@@ -224,6 +228,47 @@ const menu: MenuBarData = {
   ],
 };
 
+// update
+onMounted(() => {
+  initDSL(); // 在组件加载时执行 DSL 的初始化请求
+});
+const initDSL = async () => {
+  const data = await fetchDSL();
+  // eslint-disable-next-line no-eval
+  const dslData = eval(`(${data})`); // 发起请求获取 DSL 数据
+  if (dslData) {
+    value.value = dslData; // 将 DSL 数据设置为编辑器的初始值
+  } else {
+    console.error('无法加载 DSL 数据');
+  }
+};
+const fetchDSL = async () => {
+  try {
+    const response = await axios.get(`/api/designPlan/getTsContent?fileName=${fileName}`); // 假设你的 DSL API 是 /api/getDSL
+    console.log('response.data', response.data.data);
+    // const magicDSL = eval(`${response.data?.data}`);
+    return decodeURIComponent(response.data?.data); // 返回 DSL 数据
+  } catch (error) {
+    console.error('获取 DSL 失败:', error);
+    return null; // 如果失败，可以返回一个默认的 DSL 或者空值
+  }
+};
+const saveDSL = async (currentDSL: MApp) => {
+  const params = {
+    fileName,
+    content: currentDSL,
+  };
+  try {
+    // const currentDSL = editor.value?.editorService.get('dsl'); // 获取当前的 DSL
+    if (currentDSL) {
+      await axios.post('/api/designPlan/uploadTs', params); // 将 DSL 保存到后端
+      console.log('DSL 保存成功');
+    }
+  } catch (error) {
+    console.error('保存 DSL 失败:', error);
+  }
+};
+
 const moveableOptions = (config?: CustomizeMoveableOptionsCallbackConfig): MoveableOptions => {
   const options: MoveableOptions = {};
 
@@ -257,13 +302,16 @@ const moveableOptions = (config?: CustomizeMoveableOptionsCallbackConfig): Movea
 };
 
 const save = () => {
-  localStorage.setItem(
-    'magicDSL',
-    serialize(toRaw(value.value), {
-      space: 2,
-      unsafe: true,
-    }).replace(/"(\w+)":\s/g, '$1: '),
-  );
+  const currentDSL = serialize(toRaw(value.value), {
+    space: 2,
+    unsafe: true,
+  }).replace(/"(\w+)":\s/g, '$1: ');
+  console.log('currentDSL', currentDSL);
+  console.log('typeofcurrentDSL', typeof currentDSL);
+  saveDSL(encodeURIComponent(currentDSL)).then(() => {
+    console.log('DSL 保存成功');
+  });
+  localStorage.setItem('magicDSL', currentDSL);
   editor.value?.editorService.resetModifiedNodeId();
 };
 
@@ -283,18 +331,20 @@ asyncLoadJs(`${VITE_ENTRY_PATH}/ds-value/index.umd.cjs`).then(() => {
   datasourceValues.value = (globalThis as any).magicPresetDsValues;
 });
 
-try {
-  // eslint-disable-next-line no-eval
-  const magicDSL = eval(`(${localStorage.getItem('magicDSL')})`);
-  if (!magicDSL) {
-    save();
-  } else {
-    value.value = magicDSL;
-  }
-} catch (e) {
-  console.error(e);
-  save();
-}
+// try {
+//   // initDSL();
+//   // eslint-disable-next-line no-eval
+//   const magicDSL = eval(`(${localStorage.getItem('magicDSL')})`);
+//   console.error("localStorage.getItem('magicDSL')", localStorage.getItem('magicDSL'));
+//   if (!magicDSL) {
+//     save();
+//   } else {
+//     value.value = magicDSL;
+//   }
+// } catch (e) {
+//   console.error(e);
+//   save();
+// }
 
 editorService.usePlugin({
   beforeDoAdd: (config: MNode, parent: MContainer) => {

@@ -133,7 +133,7 @@ class App extends EventEmitter implements AppCore {
   public setConfig(config: MApp, curPage?: Id) {
     this.dsl = config;
 
-    if (!curPage && config.items.length) {
+    if (!curPage && config?.items?.length) {
       curPage = config.items[0].id;
     }
 
@@ -156,7 +156,7 @@ class App extends EventEmitter implements AppCore {
   }
 
   public setPage(id?: Id) {
-    const pageConfig = this.dsl?.items.find((page) => `${page.id}` === `${id}`);
+    const pageConfig = this.dsl?.items?.find((page) => `${page.id}` === `${id}`);
 
     if (!pageConfig) {
       if (this.page) {

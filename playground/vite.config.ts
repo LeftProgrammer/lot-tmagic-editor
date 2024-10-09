@@ -1,4 +1,5 @@
 import path from 'path';
+
 import { defineConfig } from 'vite';
 import legacy from '@vitejs/plugin-legacy';
 import vue from '@vitejs/plugin-vue';
@@ -9,7 +10,7 @@ import Components from 'unplugin-vue-components/vite';
 
 export default defineConfig(({ mode }) => {
   // 根据当前的 `mode`（development、production）加载对应的环境变量
-  console.error('mode=====>', mode)
+  console.error('mode=====>', mode);
   const isProduction = mode.includes('production');
 
   return {
@@ -30,7 +31,7 @@ export default defineConfig(({ mode }) => {
     base: isProduction ? './' : '/tmagic-editor/playground/',
 
     resolve: {
-            alias: [
+      alias: [
         {
           find: /^@tmagic\/editor\/dist\/style.css/,
           replacement: path.join(__dirname, '../packages/editor/src/theme/index.scss'),
@@ -83,6 +84,14 @@ export default defineConfig(({ mode }) => {
           target: 'http://127.0.0.1:8078',
           changeOrigin: true,
           prependPath: false,
+        },
+        '^/api': {
+          target: 'http://192.168.70.68', // 新的后端地址
+          changeOrigin: true, // 更改请求的源
+          onProxyReq: (proxyReq: any, req: any, res: any) => {
+            // 打印实际请求的目标地址
+            console.log(`Proxying request to: ${proxyReq.protocol}//${proxyReq.host}${proxyReq.path}`, req, res);
+          },
         },
       },
       open: '/tmagic-editor/playground/',

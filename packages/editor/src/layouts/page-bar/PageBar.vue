@@ -148,6 +148,7 @@ watch(active, (active) => {
 });
 
 const switchPage = (id: Id) => {
+  console.error('id===>', id);
   editorService?.select(id);
 };
 
