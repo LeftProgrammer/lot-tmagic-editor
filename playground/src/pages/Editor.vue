@@ -27,7 +27,6 @@
     </TMagicEditor>
 
     <TMagicDialog v-model="previewVisible" destroy-on-close class="pre-viewer" title="预览" :width="stageRect?.width">
-      {{ previewUrl }}
       <iframe
         v-if="previewVisible"
         ref="iframe"
@@ -96,8 +95,8 @@ const datasourceEventMethodList = ref<Record<string, any>>({
 const datasourceConfigs = ref<Record<string, any>>({});
 const datasourceValues = ref<Record<string, any>>({});
 const stageRect = ref({
-  width: 375,
-  height: 817,
+  width: 1024,
+  height: 768,
 });
 
 const previewUrl = computed(
@@ -159,7 +158,7 @@ const menu: MenuBarData = {
   left: [
     {
       type: 'text',
-      text: '魔方',
+      text: '界面设计器',
     },
   ],
   center: ['delete', 'undo', 'redo', 'guides', 'rule', 'zoom'],
@@ -193,7 +192,6 @@ const menu: MenuBarData = {
               type: 'warning',
             });
             save();
-            tMagicMessage.success('保存成功');
           } catch (e) {
             console.error(e);
           }
@@ -215,7 +213,6 @@ const menu: MenuBarData = {
       icon: Coin,
       handler: () => {
         save();
-        tMagicMessage.success('保存成功');
       },
     },
     '/',
@@ -231,29 +228,34 @@ const menu: MenuBarData = {
 // update
 onMounted(() => {
   initDSL(); // 在组件加载时执行 DSL 的初始化请求
+  getEventList();
 });
 const initDSL = async () => {
-  const data = await fetchDSL();
-  // eslint-disable-next-line no-eval
-  const dslData = eval(`(${data})`); // 发起请求获取 DSL 数据
+  const dslData = await fetchDSL();
   if (dslData) {
-    value.value = dslData; // 将 DSL 数据设置为编辑器的初始值
+    // eslint-disable-next-line no-eval
+    value.value = eval(`(${dslData})`); // 将 DSL 数据设置为编辑器的初始值
+    const currentDSL = serialize(toRaw(value.value), {
+      space: 2,
+      unsafe: true,
+    }).replace(/"(\w+)":\s/g, '$1: ');
+    localStorage.setItem('magicDSL', currentDSL);
   } else {
     console.error('无法加载 DSL 数据');
   }
 };
+// 获取dsl
 const fetchDSL = async () => {
   try {
     const response = await axios.get(`/api/designPlan/getTsContent?fileName=${fileName}`); // 假设你的 DSL API 是 /api/getDSL
-    console.log('response.data', response.data.data);
-    // const magicDSL = eval(`${response.data?.data}`);
     return decodeURIComponent(response.data?.data); // 返回 DSL 数据
   } catch (error) {
     console.error('获取 DSL 失败:', error);
     return null; // 如果失败，可以返回一个默认的 DSL 或者空值
   }
 };
-const saveDSL = async (currentDSL: MApp) => {
+// 保存dsl
+const saveDSL = async (currentDSL: any) => {
   const params = {
     fileName,
     content: currentDSL,
@@ -266,6 +268,14 @@ const saveDSL = async (currentDSL: MApp) => {
     }
   } catch (error) {
     console.error('保存 DSL 失败:', error);
+  }
+};
+// 获取事件列表
+const getEventList = async () => {
+  const { data }: any = await axios.get('/api/event/list');
+  if (data?.code === 200 && data?.data && data?.data?.length > 0) {
+    const list = data?.data.map((item: any) => ({ value: item.id, text: item.name }));
+    localStorage.setItem('eventEnum', JSON.stringify(list));
   }
 };
 
@@ -306,13 +316,11 @@ const save = () => {
     space: 2,
     unsafe: true,
   }).replace(/"(\w+)":\s/g, '$1: ');
-  console.log('currentDSL', currentDSL);
-  console.log('typeofcurrentDSL', typeof currentDSL);
   saveDSL(encodeURIComponent(currentDSL)).then(() => {
-    console.log('DSL 保存成功');
+    localStorage.setItem('magicDSL', currentDSL);
+    editor.value?.editorService.resetModifiedNodeId();
+    tMagicMessage.success('保存成功');
   });
-  localStorage.setItem('magicDSL', currentDSL);
-  editor.value?.editorService.resetModifiedNodeId();
 };
 
 asyncLoadJs(`${VITE_ENTRY_PATH}/config/index.umd.cjs`).then(() => {

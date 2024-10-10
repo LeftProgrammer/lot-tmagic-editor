@@ -20,13 +20,13 @@ const services = inject<Services>('services');
 
 const devH: Record<DeviceType, number | string> = {
   phone: 817,
-  pad: 1024,
+  pad: 768,
   pc: '100%',
 };
 
 const devW: Record<DeviceType, number | string> = {
   phone: 375,
-  pad: 768,
+  pad: 1024,
   pc: '100%',
 };
 
@@ -39,8 +39,8 @@ const modelValue = defineModel<{
   height: number | string;
 }>('modelValue', {
   default: () => ({
-    width: 375,
-    height: 817,
+    width: 1024,
+    height: 768,
   }),
 });
 
@@ -65,11 +65,11 @@ const calcFontsize = () => {
 
     app.setDesignWidth(stageWidth);
   } else {
-    app.setDesignWidth(375);
+    app.setDesignWidth(1024);
   }
 };
 
-const viewerDevice = ref(DeviceType.Phone);
+const viewerDevice = ref(DeviceType.Pad);
 
 const deviceSelect = async (device: DeviceType) => {
   const width = getDeviceWidth(device);

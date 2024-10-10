@@ -168,12 +168,13 @@ const onChangeHandler = (value: string[]) => {
 
 watchEffect(() => {
   if (tagName.value && tagName.value?.name === 'MFormSelect') {
-    console.error("tagName.value === 'MFormSelect'");
+    console.error("tagName.value === 'MFormSelect'", tagName.value);
+    console.error("props === 'props'", props);
     // 给 MFormSelect 设置 options
-    if (props.config.fieldConfig && !props.config.fieldConfig.options?.length) {
-      const eventList = localStorage.getItem('eventList');
-      if (eventList) {
-        props.config.fieldConfig.options = JSON.parse(eventList);
+    if (props.config?.fieldConfig && !props.config?.fieldConfig?.options?.length) {
+      const eventEnum = localStorage.getItem('eventEnum');
+      if (eventEnum) {
+        props.config.fieldConfig.options = JSON.parse(eventEnum);
       } else {
         props.config.fieldConfig.options = [];
       }
